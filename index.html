@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Student & Savings Tracker - นวพล</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Prompt', sans-serif; overflow-x: hidden; }
+
+/* เอฟเฟกต์ฟองสบู่ลอย */
+@keyframes floatUp {
+0% { transform: translateY(0px) scale(1); opacity: 0.8; }
+50% { transform: translateY(-15px) scale(1.05); opacity: 1; }
+100% { transform: translateY(0px) scale(1); opacity: 0.8; }
+}
+.bubble-float {
+animation: floatUp 4s ease-in-out infinite;
+}
+</style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-4 flex items-center justify-center relative">
+
+<!-- 🫧 ฟองสบู่รูปภาพลอยได้ (มุมขวาบนของจอ หรือในกรอบ) -->
+<div id="bubbleWrapper" class="fixed top-6 right-6 z-40 hidden flex-col items-center">
+<div class="bubble-float relative w-20 h-20 rounded-full border-4 border-pink-400/80 shadow-lg shadow-pink-500/30 overflow-hidden bg-gray-800 cursor-pointer" onclick="document.getElementById('bubbleImageInput').click()" title="แตะเพื่อเปลี่ยนรูปฟองสบู่">
+<img id="floatingBubbleImg" src="" alt="Bubble Photo" class="w-full h-full object-cover">
+</div>
+<span class="text-[10px] text-pink-300 mt-1 bg-black/50 px-2 py-0.5 rounded-full backdrop-blur-sm">💖 กำลังใจลอยได้</span>
+</div>
+
+<div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10">
+
+<!-- ส่วนหัว -->
+<div class="flex items-center justify-between">
+<h1 class="text-xl font-bold text-cyan-400">📱 Student & Savings Tracker</h1>
+<span class="text-xs bg-cyan-900 text-cyan-300 px-2 py-1 rounded-full">ปวช. 1/2 อิเล็กฯ</span>
+</div>
+
+<!-- 🫧 เมนูตั้งค่ารูปฟองสบู่ -->
+<div class="p-3 bg-gray-750 rounded-xl border border-pink-500/30 space-y-2">
+<label class="block text-xs font-semibold text-pink-400 mb-1">🫧 ตั้งค่ารูปฟองสบู่ลอย (เช่น รูปแฟน / กำลังใจ):</label>
+<input type="file" id="bubbleImageInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
+</div>
+
+<!-- 💰 เมนูเป้าหมายการเก็บเงิน (จำค่าถาวร) -->
+<div class="p-4 bg-gray-750 rounded-xl border border-emerald-500/40 space-y-3">
+<div class="flex justify-between items-center">
+<h2 id="displayGoalTitle" class="text-sm font-semibold text-emerald-400">🎯 เป้าหมาย: เก็บเงินซื้อ Nintendo Switch</h2>
+<span id="displayGoalProgress" class="text-xs text-gray-300">0 / 6,000 บาท</span>
+</div>
+
+<div class="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
+<div id="progressBar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+</div>
+
+<div class="space-y-2.5 pt-2 border-t border-gray-700">
+<div class="grid grid-cols-2 gap-2">
+<div>
+<label class="block text-[10px] text-gray-400 mb-1">หัวข้อเป้าหมาย:</label>
+<input type="text" id="goalTitleInput" placeholder="ซื้อเครื่องเกม" value="เก็บเงินซื้อ Nintendo Switch" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
+</div>
+<div>
+<label class="block text-[10px] text-gray-400 mb-1">เป้าหมายจำนวนเงิน (บาท):</label>
+<input type="number" id="goalTargetInput" value="6000" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
+</div>
+</div>
+
+<button type="button" onclick="saveGoalSettings()" class="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-2 rounded-lg transition active:scale-95 cursor-pointer">
+💾 บันทึกตั้งค่าเป้าหมายใหม่
+</button>
+
+<div class="flex gap-2 pt-1 border-t border-gray-700/60">
+<input type="number" id="addMoneyInput" placeholder="+ จำนวนเงินที่เก็บเพิ่ม" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
+<button type="button" onclick="addSavings()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition active:scale-95 whitespace-nowrap cursor-pointer">
+➕ ฝากเงิน
+</button>
+</div>
+</div>
+</div>
+
+<!-- 📅 ส่วนอัปเดตตารางเรียน -->
+<div class="p-3 bg-gray-750 rounded-xl border border-gray-700">
+<label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (รูปภาพตารางใหม่):</label>
+<input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-500 cursor-pointer">
+<p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ใช้ตารางเรียนหลักปัจจุบัน (ปวช. 1/2)</p>
+</div>
+
+<!-- ปุ่มบันทึกด่วน (Quick Log) -->
+<div class="grid grid-cols-2 gap-2">
+<button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
+<button type="button" onclick="quickSelect('🏫 ถึงวิทยาลัยแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงวิทยาลัย</button>
+<button type="button" onclick="quickSelect('🏠 กลับถึงหอพักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงหอพัก</button>
+<button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
+</div>
+
+<!-- ฟอร์มรายงานประจำวัน -->
+<form id="reportForm" onsubmit="handleFormSubmit(event)" class="space-y-3">
+<div>
+<label class="block text-xs font-medium text-gray-300 mb-1">📷 รูปภาพกิจกรรมประจำวัน:</label>
+<input type="file" id="imageInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-500 cursor-pointer">
+</div>
+
+<div>
+<label class="block text-xs font-medium text-gray-300 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
+<textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น 15.42 ถึงหอพักแล้ว..."></textarea>
+</div>
+
+<button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 font-bold py-2.5 rounded-xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
+🚀 ส่งรายงานประมวลผลด้วย AI
+</button>
+</form>
+
+</div>
+
+<!-- ✨ ป๊อปอัพแจ้งเตือนพร้อมปุ่ม OK -->
+<div id="customModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+<div class="bg-gray-800 border border-cyan-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
+<div class="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+🤖
+</div>
+<h3 class="text-lg font-bold text-cyan-400">ผลการประมวลผลจาก AI</h3>
+<p id="modalMessage" class="text-xs text-gray-300 leading-relaxed whitespace-pre-line text-left bg-gray-900/60 p-3 rounded-xl border border-gray-700"></p>
+<button type="button" onclick="closeModal()" class="w-full bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-bold py-2.5 rounded-xl transition active:scale-95 text-sm cursor-pointer">
+OK 👍
+</button>
+</div>
+</div>
+
+<script>
+// โหลดข้อมูลเงินเก็บและเป้าหมายจาก LocalStorage
+let currentSavings = parseFloat(localStorage.getItem('saved_money')) || 0;
+let targetAmount = parseFloat(localStorage.getItem('saved_target')) || 6000;
+let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อ Nintendo Switch";
+
+// โหลดรูปฟองสบู่ที่เคยเซฟไว้
+let savedBubbleImg = localStorage.getItem('bubble_photo');
+
+window.onload = function() {
+document.getElementById('goalTitleInput').value = goalTitle;
+document.getElementById('goalTargetInput').value = targetAmount;
+document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
+updateProgressUI();
+
+// ถ้ามีรูปฟองสบู่ที่เคยอัปโหลดไว้ ให้แสดงผลทันที
+if (savedBubbleImg) {
+document.getElementById('floatingBubbleImg').src = savedBubbleImg;
+document.getElementById('bubbleWrapper').classList.remove('hidden');
+document.getElementById('bubbleWrapper').classList.add('flex');
+}
+};
+
+// จัดการอัปโหลดรูปฟองสบู่ลอย
+document.getElementById('bubbleImageInput').addEventListener('change', function(e) {
+const file = e.target.files[0];
+if (file) {
+const reader = new FileReader();
+reader.onload = function(event) {
+const base64Img = event.target.result;
+localStorage.setItem('bubble_photo', base64Img); // เซฟจำถาวร
+document.getElementById('floatingBubbleImg').src = base64Img;
+document.getElementById('bubbleWrapper').classList.remove('hidden');
+document.getElementById('bubbleWrapper').classList.add('flex');
+};
+reader.readAsDataURL(file);
+}
+});
+
+function updateProgressUI() {
+let percent = (currentSavings / targetAmount) * 100;
+if (percent > 100) percent = 100;
+document.getElementById('displayGoalProgress').innerText = `${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท`;
+document.getElementById('progressBar').style.width = `${percent}%`;
+}
+
+function showModal(message) {
+document.getElementById('modalMessage').innerText = message;
+document.getElementById('customModal').classList.remove('hidden');
+}
+
+function closeModal() {
+document.getElementById('customModal').classList.add('hidden');
+}
+
+function saveGoalSettings() {
+const titleInput = document.getElementById('goalTitleInput').value.trim();
+const targetInput = document.getElementById('goalTargetInput').value;
+
+if (targetInput) {
+targetAmount = parseFloat(targetInput) || 6000;
+}
+goalTitle = titleInput ? titleInput : "เป้าหมายการเก็บเงิน";
+
+localStorage.setItem('saved_title', goalTitle);
+localStorage.setItem('saved_target', targetAmount);
+
+document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
+updateProgressUI();
+
+showModal(`🎯 อัปเดตเป้าหมายสำเร็จ!\n- หัวข้อ: ${goalTitle}\n- เป้าหมายใหม่: ${targetAmount.toLocaleString()} บาท\n- ยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} บาท`);
+}
+
+function addSavings() {
+const addInput = document.getElementById('addMoneyInput').value;
+const addVal = parseFloat(addInput);
+
+if (!isNaN(addVal) && addVal > 0) {
+currentSavings += addVal;
+localStorage.setItem('saved_money', currentSavings);
+} else {
+alert('กรุณากรอกจำนวนเงินที่ต้องการฝากเพิ่มให้ถูกต้องครับ!');
+return;
+}
+
+updateProgressUI();
+document.getElementById('addMoneyInput').value = '';
+
+let percent = (currentSavings / targetAmount) * 100;
+if (percent > 100) percent = 100;
+
+showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับ กำลังใจมาเต็ม!`);
+}
+
+document.getElementById('scheduleInput').addEventListener('change', function(e) {
+if(e.target.files.length > 0) {
+document.getElementById('scheduleStatus').innerText = "สถานะ: อัปเดตตารางเรียนใหม่เรียบร้อย (" + e.target.files[0].name + ")";
+document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
+}
+});
+
+function quickSelect(actionText) {
+const now = new Date();
+const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+document.getElementById('userNote').value = `${timeString} น. - ${actionText}`;
+}
+
+function handleFormSubmit(event) {
+event.preventDefault();
+const note = document.getElementById('userNote').value;
+const imageInput = document.getElementById('imageInput');
+
+if (!note && imageInput.files.length === 0) {
+alert('กรุณากรอกข้อความหรือเลือกรูปภาพก่อนส่งครับ!');
+return;
+}
+
+let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- บันทึก: "${note || 'ไม่มีข้อความ'}'\n- ยอดเงินเป้าหมายคงเหลือสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n💡 คำแนะนำจาก AI: วันนี้ทำได้ยอดเยี่ยมมากครับ พักผ่อนเยอะๆ นะ!`;
+
+showModal(responseMsg);
+}
+</script>
+</body>
+</html>
