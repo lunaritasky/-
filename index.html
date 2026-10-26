@@ -231,7 +231,7 @@
       showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
     }
 
-    // 🧠 ระบบ AI ประมวลผลตารางเรียน
+    // 🧠 ระบบ AI ตรวจสอบเงื่อนไขสายอาชีวะก่อนขึ้นก่อนเสมอ ป้องกันการสับสนกับสายสามัญ
     document.getElementById('scheduleInput').addEventListener('change', function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -239,26 +239,25 @@
 
         let detectedResult = "";
 
-        if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m4')) {
-          detectedResult = "ม.4 วิทย์-คณิต";
+        // 1. เช็กสายอาชีวะ (ปวช. / ปวส. / อิเล็ก / ช่าง) เป็นอันดับแรกสุด
+        if (fn.includes('ปวช.3') || fn.includes('ปวช3') || fn.includes('ชอ.3')) {
+          detectedResult = "ปวช.3 ช่างอิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวช.2') || fn.includes('ปวช2') || fn.includes('ชอ.2')) {
+          detectedResult = "ปวช.2 ช่างอิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวช.1') || fn.includes('ปวช1') || fn.includes('ชอ.1') || fn.includes('ปวช') || fn.includes('ชอ') || fn.includes('elec') || fn.includes('อิเล็ก')) {
+          detectedResult = "ปวช.1 ช่างอิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวส.2') || fn.includes('ปวส2')) {
+          detectedResult = "ปวส.2 เทคโนโลยีอิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวส.1') || fn.includes('ปวส1') || fn.includes('ปวส')) {
+          detectedResult = "ปวส.1 เทคโนโลยีอิเล็กทรอนิกส์";
+        } 
+        // 2. เช็กสายสามัญ (ม.4, ม.5, ม.6) ถัดมา
+        else if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m6')) {
+          detectedResult = "ม.6 วิทย์-คณิต";
         } else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m5')) {
           detectedResult = "ม.5 วิทย์-คณิต";
-        } else if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m6')) {
-          detectedResult = "ม.6 วิทย์-คณิต";
-        } else if (fn.includes('ปวช.1') || fn.includes('ชอ.1') || fn.includes('201')) {
-          detectedResult = "ปวช.1 ช่างอิเล็กทรอนิกส์";
-        } else if (fn.includes('ปวช.2') || fn.includes('ชอ.2')) {
-          detectedResult = "ปวช.2 ช่างอิเล็กทรอนิกส์";
-        } else if (fn.includes('ปวช.3') || fn.includes('ชอ.3')) {
-          detectedResult = "ปวช.3 ช่างอิเล็กทรอนิกส์";
-        } else if (fn.includes('ปวส')) {
-          detectedResult = "ปวส. เทคโนโลยีอิเล็กทรอนิกส์";
-        } else if (fn.includes('ว31') || fn.includes('ค31') || fn.includes('ว3') || fn.includes('ค3')) {
+        } else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m4') || fn.includes('ว31') || fn.includes('ค31')) {
           detectedResult = "ม.4 วิทย์-คณิต";
-        } else if (fn.includes('ว32') || fn.includes('ค32')) {
-          detectedResult = "ม.5 วิทย์-คณิต";
-        } else if (fn.includes('ว33') || fn.includes('ค33')) {
-          detectedResult = "ม.6 วิทย์-คณิต";
         } else {
           detectedResult = "ม.4 วิทย์-คณิต";
         }
@@ -271,7 +270,7 @@
         document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
         document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
-        showModal(`🔍 AI หักล้างและวิเคราะห์รหัสวิชาจากตารางสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ผลการประมวลผล: ${studentClass}\n\n💡 ระบบอัปเดตข้อมูลระดับชั้นของคุณ ${userName} เรียบร้อยถาวรครับ!`);
+        showModal(`🔍 AI ตรวจสอบและแยกแยะตารางเรียนสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ระดับชั้นและแผนการเรียน: ${studentClass}\n\n💡 ระบบอัปเดตข้อมูลของคุณ ${userName} เรียบร้อยถาวรครับ!`);
       }
     });
 
