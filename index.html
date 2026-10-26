@@ -1,3 +1,8 @@
+แก้อาการหลอนจับคู่ผสมพันธุ์ระหว่าง "ม.4" กับ "ช่างอิเล็กทรอนิกส์" ให้เรียบร้อยแล้วครับ!
+ระบบใหม่จะแบ่งแยกเด็ดขาดเลยว่า:
+ * หากไฟล์มีคำว่า ปวช. / ปวส. / ชอ. / อิเล็ก จะถูกบังคับให้ขึ้นต้นด้วย ปวช./ปวส. เท่านั้น และไม่มีทางแสดงคำว่า "ม.4" ปนเด็ดขาด
+ * หากไฟล์เป็นสายสามัญ ถึงจะแสดงเป็น ม.4, ม.5, ม.6 ครับ
+สามารถก๊อปปี้โค้ดชุดสมบูรณ์นี้ไปวางแทนที่ใน GitHub ได้เลยครับ:
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -349,7 +354,7 @@
       }, delay);
     }
 
-    // 🧠 ระบบ AI OCR สแกนตารางเรียนพร้อมครอบคลุมทุกแผนกอาชีวะและสายสามัญ
+    // 🧠 ระบบ AI OCR สแกนตารางเรียน แยกสายอาชีวะกับสายสามัญแบบเด็ดขาด 100%
     document.getElementById('scheduleInput').addEventListener('change', async function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -373,51 +378,54 @@
           }
 
           let detectedClass = "";
-          let levelPrefix = "";
 
-          // ตรวจสอบระดับชั้น ปวช. / ปวส. / ม.ปลาย
-          if (fn.includes('ปวช.3') || fn.includes('ปวช3')) levelPrefix = "ปวช.3";
-          else if (fn.includes('ปวช.2') || fn.includes('ปวช2')) levelPrefix = "ปวช.2";
-          else if (fn.includes('ปวช.1') || fn.includes('ปวช1') || fn.includes('ปวช')) levelPrefix = "ปวช.1";
-          else if (fn.includes('ปวส.2') || fn.includes('ปวส2')) levelPrefix = "ปวส.2";
-          else if (fn.includes('ปวส.1') || fn.includes('ปวส1') || fn.includes('ปวส')) levelPrefix = "ปวส.1";
-          else if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
-          else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
-          else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) levelPrefix = "ม.4";
-          else levelPrefix = "ปวช."; // ค่าเริ่มต้นสำหรับอาชีวะ
+          // 🛠️ เช็กสายอาชีวะ (ช่าง / พาณิชย์ / คหกรรม / ท่องเที่ยว / ดิจิทัล) เป็นอันดับแรกสุดเด็ดขาด
+          let isVocational = fn.includes('ปวช') || fn.includes('ปวส') || fn.includes('ชอ.') || fn.includes('ชอ') || fn.includes('ชฟ') || fn.includes('ชย') || fn.includes('ชก') || fn.includes('elec') || fn.includes('อิเล็ก') || fn.includes('บัญชี') || fn.includes('การตลาด') || fn.includes('ท่องเที่ยว') || fn.includes('ดิจิทัล') || fn.includes('อาหาร') || fn.includes('ยานยนต์') || fn.includes('เครื่องกล') || fn.includes('เชื่อม') || fn.includes('ก่อสร้าง') || fn.includes('เมคคา');
 
-          // ตรวจสอบแผนกวิชาตามที่คุณกำหนด
-          if (fn.includes('ยานยนต์ไฟฟ้า') || fn.includes('เทคนิคยานยนต์')) detectedClass = `${levelPrefix} เทคนิคยานยนต์ไฟฟ้า`;
-          else if (fn.includes('เครื่องกล') || fn.includes('ชย')) detectedClass = `${levelPrefix} เทคนิคเครื่องกล / ช่างยนต์`;
-          else if (fn.includes('ช่างยนต์')) detectedClass = `${levelPrefix} ช่างยนต์`;
-          else if (fn.includes('เทคนิคการผลิต') || fn.includes('กลโรงงาน')) detectedClass = `${levelPrefix} ช่างกลโรงงาน / เทคนิคการผลิต`;
-          else if (fn.includes('เชื่อม') || fn.includes('โลหะ')) detectedClass = `${levelPrefix} ช่างเชื่อม / เทคนิคโลหะ`;
-          else if (fn.includes('ไฟฟ้ากำลัง') || fn.includes('ชฟ')) detectedClass = `${levelPrefix} ช่างไฟฟ้ากำลัง`;
-          else if (fn.includes('อิเล็ก') || fn.includes('ชอ') || fn.includes('elec')) detectedClass = `${levelPrefix} ช่างอิเล็กทรอนิกส์`;
-          else if (fn.includes('เมคคา') || fn.includes('หุ่นยนต์')) detectedClass = `${levelPrefix} เมคคาทรอนิกส์และหุ่นยนต์`;
-          else if (fn.includes('ก่อสร้าง') || fn.includes('สถาปัตยกรรม')) detectedClass = `${levelPrefix} ช่างก่อสร้าง / สถาปัตยกรรม`;
-          else if (fn.includes('ปิโตรเคมี') || fn.includes('เคมีอุตสาหกรรม')) detectedClass = `${levelPrefix} ปิโตรเคมี / เคมีอุตสาหกรรม`;
-          else if (fn.includes('ยาง') || fn.includes('พอลิเมอร์')) detectedClass = `${levelPrefix} เทคโนโลยียางและพอลิเมอร์`;
-          else if (fn.includes('เครื่องมือวัด') || fn.includes('ควบคุม')) detectedClass = `${levelPrefix} เครื่องมือวัดและควบคุม`;
-          else if (fn.includes('เทคนิคพื้นฐาน')) detectedClass = `${levelPrefix} เทคนิคพื้นฐาน`;
-          // พาณิชยกรรม / บริหารธุรกิจ
-          else if (fn.includes('บัญชี')) detectedClass = `${levelPrefix} การบัญชี`;
-          else if (fn.includes('การตลาด') || fn.includes('ค้าปลีก')) detectedClass = `${levelPrefix} การตลาดและธุรกิจค้าปลีก`;
-          else if (fn.includes('สำนักงานดิจิทัล')) detectedClass = `${levelPrefix} การจัดการสำนักงานดิจิทัล`;
-          else if (fn.includes('โลจิสติกส์')) detectedClass = `${levelPrefix} การจัดการโลจิสติกส์`;
-          // คหกรรมศาสตร์ / ท่องเที่ยว / ดิจิทัล
-          else if (fn.includes('อาหาร') || fn.includes('โภชนาการ')) detectedClass = `${levelPrefix} อาหารและโภชนาการ`;
-          else if (fn.includes('ท่องเที่ยว')) detectedClass = `${levelPrefix} การท่องเที่ยว`;
-          else if (fn.includes('ดิจิทัล') || fn.includes('ecommerce') || fn.includes('คอนเทนต์')) detectedClass = `${levelPrefix} เทคโนโลยีธุรกิจดิจิทัล`;
-          // สายสามัญ
-          else if (levelPrefix.startsWith('ม.')) {
+          if (isVocational) {
+            let vocLevel = "ปวช.1";
+            if (fn.includes('ปวช.3') || fn.includes('ปวช3')) vocLevel = "ปวช.3";
+            else if (fn.includes('ปวช.2') || fn.includes('ปวช2')) vocLevel = "ปวช.2";
+            else if (fn.includes('ปวช.1') || fn.includes('ปวช1') || fn.includes('ปวช')) vocLevel = "ปวช.1";
+            else if (fn.includes('ปวส.2') || fn.includes('ปวส2')) vocLevel = "ปวส.2";
+            else if (fn.includes('ปวส.1') || fn.includes('ปวส1') || fn.includes('ปวส')) vocLevel = "ปวส.1";
+
+            // แยกสาขาอาชีวะ
+            if (fn.includes('ยานยนต์ไฟฟ้า') || fn.includes('เทคนิคยานยนต์')) detectedClass = `${vocLevel} เทคนิคยานยนต์ไฟฟ้า`;
+            else if (fn.includes('เครื่องกล') || fn.includes('ชย')) detectedClass = `${vocLevel} เทคนิคเครื่องกล / ช่างยนต์`;
+            else if (fn.includes('ช่างยนต์')) detectedClass = `${vocLevel} ช่างยนต์`;
+            else if (fn.includes('เทคนิคการผลิต') || fn.includes('กลโรงงาน')) detectedClass = `${vocLevel} ช่างกลโรงงาน / เทคนิคการผลิต`;
+            else if (fn.includes('เชื่อม') || fn.includes('โลหะ')) detectedClass = `${vocLevel} ช่างเชื่อม / เทคนิคโลหะ`;
+            else if (fn.includes('ไฟฟ้ากำลัง') || fn.includes('ชฟ')) detectedClass = `${vocLevel} ช่างไฟฟ้ากำลัง`;
+            else if (fn.includes('อิเล็ก') || fn.includes('ชอ') || fn.includes('elec')) detectedClass = `${vocLevel} ช่างอิเล็กทรอนิกส์`;
+            else if (fn.includes('เมคคา') || fn.includes('หุ่นยนต์')) detectedClass = `${vocLevel} เมคคาทรอนิกส์และหุ่นยนต์`;
+            else if (fn.includes('ก่อสร้าง') || fn.includes('สถาปัตยกรรม')) detectedClass = `${vocLevel} ช่างก่อสร้าง / สถาปัตยกรรม`;
+            else if (fn.includes('ปิโตรเคมี') || fn.includes('เคมีอุตสาหกรรม')) detectedClass = `${vocLevel} ปิโตรเคมี / เคมีอุตสาหกรรม`;
+            else if (fn.includes('ยาง') || fn.includes('พอลิเมอร์')) detectedClass = `${vocLevel} เทคโนโลยียางและพอลิเมอร์`;
+            else if (fn.includes('เครื่องมือวัด') || fn.includes('ควบคุม')) detectedClass = `${vocLevel} เครื่องมือวัดและควบคุม`;
+            else if (fn.includes('เทคนิคพื้นฐาน')) detectedClass = `${vocLevel} เทคนิคพื้นฐาน`;
+            else if (fn.includes('บัญชี')) detectedClass = `${vocLevel} การบัญชี`;
+            else if (fn.includes('การตลาด') || fn.includes('ค้าปลีก')) detectedClass = `${vocLevel} การตลาดและธุรกิจค้าปลีก`;
+            else if (fn.includes('สำนักงานดิจิทัล')) detectedClass = `${vocLevel} การจัดการสำนักงานดิจิทัล`;
+            else if (fn.includes('โลจิสติกส์')) detectedClass = `${vocLevel} การจัดการโลจิสติกส์`;
+            else if (fn.includes('อาหาร') || fn.includes('โภชนาการ')) detectedClass = `${vocLevel} อาหารและโภชนาการ`;
+            else if (fn.includes('ท่องเที่ยว')) detectedClass = `${vocLevel} การท่องเที่ยว`;
+            else if (fn.includes('ดิจิทัล') || fn.includes('ecommerce') || fn.includes('คอนเทนต์')) detectedClass = `${vocLevel} เทคโนโลยีธุรกิจดิจิทัล`;
+            else detectedClass = `${vocLevel} ช่างอุตสาหกรรมทั่วไป`;
+
+          } else {
+            // 📚 สายสามัญ (ม.4, ม.5, ม.6)
+            let levelPrefix = "";
+            if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
+            else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
+            else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) levelPrefix = "ม.4";
+            else levelPrefix = "ม.4"; // ค่าเริ่มต้นสายสามัญ
+
             if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) {
               detectedClass = `${levelPrefix} วิทย์-คณิต`;
             } else {
               detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
             }
-          } else {
-            detectedClass = `${levelPrefix} ช่างอุตสาหกรรมทั่วไป`;
           }
 
           studentClass = detectedClass;
@@ -543,3 +551,4 @@
   </script>
 </body>
 </html>
+
