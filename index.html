@@ -6,6 +6,8 @@
   <title>Daily Student & Savings Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- 🧠 นำเข้าไลบรารี OCR สำหรับอ่านตัวอักษรจากรูปภาพ -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     body { font-family: 'Prompt', sans-serif; overflow-x: hidden; }
     
@@ -87,7 +89,7 @@
     <!-- 📅 ส่วนอัปเดตตารางเรียน + ปุ่มลบตาราง -->
     <div class="p-3 bg-gray-750 rounded-xl border border-gray-700 space-y-2">
       <div class="flex justify-between items-center">
-        <label class="block text-xs font-semibold text-amber-400">📅 อัปเดตตารางเรียน:</label>
+        <label class="block text-xs font-semibold text-amber-400">📅 อัปเดตตารางเรียน (AI OCR สแกนตัวหนังสือ):</label>
         <button type="button" onclick="clearSchedule()" class="text-[10px] bg-red-600/80 hover:bg-red-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer">🗑️ ลบตารางออก</button>
       </div>
 
@@ -99,7 +101,7 @@
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
       <button type="button" onclick="quickSelect('🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก</button>
+      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 กลับถึงที่พัก</button>
       <button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
     </div>
 
@@ -122,7 +124,7 @@
 
   </div>
 
-  <!-- ✨ ป๊อปอัพตั้งค่าชื่อผู้ใช้ (แสดงเฉพาะครั้งแรกที่เข้าใช้งาน) -->
+  <!-- ✨ ป๊อปอัพตั้งค่าชื่อผู้ใช้ -->
   <div id="setupModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
     <div class="bg-gray-800 border border-cyan-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
       <div class="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -231,50 +233,91 @@
       showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
     }
 
-    // 🧠 ระบบ AI ตรวจสอบเงื่อนไขสายอาชีวะก่อนขึ้นก่อนเสมอ ป้องกันการสับสนกับสายสามัญ
-    document.getElementById('scheduleInput').addEventListener('change', function(e) {
+    // 🧠 เอนจิน AI OCR สแกนวิเคราะห์ตัวหนังสือในภาพจริง
+    document.getElementById('scheduleInput').addEventListener('change', async function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
-        const fn = file.name.toLowerCase();
+        
+        document.getElementById('scheduleStatus').innerText = "⏳ AI กำลังสแกนและวิเคราะห์ตัวหนังสือในภาพ...";
+        document.getElementById('scheduleStatus').className = "text-[10px] text-amber-400 mt-1 animate-pulse";
 
-        let detectedResult = "";
+        try {
+          // ใช้ Tesseract.js สแกนตัวหนังสือภาษาไทยและอังกฤษจากรูปภาพ
+          const worker = await Tesseract.createWorker('tha+eng');
+          const ret = await worker.recognize(file);
+          await worker.terminate();
 
-        // 1. เช็กสายอาชีวะ (ปวช. / ปวส. / อิเล็ก / ช่าง) เป็นอันดับแรกสุด
-        if (fn.includes('ปวช.3') || fn.includes('ปวช3') || fn.includes('ชอ.3')) {
-          detectedResult = "ปวช.3 ช่างอิเล็กทรอนิกส์";
-        } else if (fn.includes('ปวช.2') || fn.includes('ปวช2') || fn.includes('ชอ.2')) {
-          detectedResult = "ปวช.2 ช่างอิเล็กทรอนิกส์";
-        } else if (fn.includes('ปวช.1') || fn.includes('ปวช1') || fn.includes('ชอ.1') || fn.includes('ปวช') || fn.includes('ชอ') || fn.includes('elec') || fn.includes('อิเล็ก')) {
-          detectedResult = "ปวช.1 ช่างอิเล็กทรอนิกส์";
-        } else if (fn.includes('ปวส.2') || fn.includes('ปวส2')) {
-          detectedResult = "ปวส.2 เทคโนโลยีอิเล็กทรอนิกส์";
-        } else if (fn.includes('ปวส.1') || fn.includes('ปวส1') || fn.includes('ปวส')) {
-          detectedResult = "ปวส.1 เทคโนโลยีอิเล็กทรอนิกส์";
-        } 
-        // 2. เช็กสายสามัญ (ม.4, ม.5, ม.6) ถัดมา
-        else if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m6')) {
-          detectedResult = "ม.6 วิทย์-คณิต";
-        } else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m5')) {
-          detectedResult = "ม.5 วิทย์-คณิต";
-        } else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m4') || fn.includes('ว31') || fn.includes('ค31')) {
-          detectedResult = "ม.4 วิทย์-คณิต";
-        } else {
-          detectedResult = "ม.4 วิทย์-คณิต";
+          const extractedText = ret.data.text.trim();
+          const fn = (file.name + " " + extractedText).toLowerCase();
+
+          // ❌ หากไม่พบข้อความใดๆ ในรูปภาพ
+          if (!extractedText || extractedText.length < 5) {
+            document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบตัวอักษรใดๆ ในรูปภาพ กรุณาอัปโหลดใหม่";
+            document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
+            showModal(`❌ เกิดข้อผิดพลาดในการประมวลผล!\n\nไม่พบตัวอักษรหรือรหัสวิชาใดๆ ในรูปภาพตารางเรียนนี้\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีความคมชัด และเห็นข้อความชัดเจนใหม่อีกครั้งครับ!`);
+            return;
+          }
+
+          let detectedGrade = "";
+          let detectedDepartment = "";
+
+          // 1. ตรวจจับระดับชั้น
+          if (fn.includes('4/') || fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) detectedGrade = "ม.4";
+          else if (fn.includes('5/') || fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5') || fn.includes('32')) detectedGrade = "ม.5";
+          else if (fn.includes('6/') || fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6') || fn.includes('33')) detectedGrade = "ม.6";
+          else if (fn.includes('ปวช.1') || fn.includes('ปวช1') || fn.includes('ชอ.1') || fn.includes('201')) detectedGrade = "ปวช.1";
+          else if (fn.includes('ปวช.2') || fn.includes('ปวช2') || fn.includes('ชอ.2')) detectedGrade = "ปวช.2";
+          else if (fn.includes('ปวช.3') || fn.includes('ปวช3') || fn.includes('ชอ.3')) detectedGrade = "ปวช.3";
+          else if (fn.includes('ปวส.1') || fn.includes('ปวส1')) detectedGrade = "ปวส.1";
+          else if (fn.includes('ปวส.2') || fn.includes('ปวส2')) detectedGrade = "ปวส.2";
+
+          // 2. ตรวจจับสายวิชา/แผนก
+          // --- สายอาชีวะ (สายช่างทุกสาขา) ---
+          if (fn.includes('อิเล็ก') || fn.includes('ชอ') || fn.includes('elec') || fn.includes('วงจร')) detectedDepartment = "ช่างอิเล็กทรอนิกส์";
+          else if (fn.includes('ไฟฟ้า') || fn.includes('ชฟ') || fn.includes('กำลัง')) detectedDepartment = "ช่างไฟฟ้ากำลัง";
+          else if (fn.includes('ช่างยนต์') || fn.includes('ชย') || fn.includes('เครื่องกล') || fn.includes('ยานยนต์')) detectedDepartment = "ช่างยนต์";
+          else if (fn.includes('ก่อสร้าง') || fn.includes('โยธา') || fn.includes('ชก')) detectedDepartment = "ช่างก่อสร้าง/โยธา";
+          else if (fn.includes('เชื่อม') || fn.includes('โลหะ')) detectedDepartment = "ช่างเชื่อมโลหะ";
+          else if (fn.includes('กลโรงงาน') || fn.includes('ชก')) detectedDepartment = "ช่างกลโรงงาน";
+          else if (fn.includes('คอมพิวเตอร์') || fn.includes('สารสนเทศ') || fn.includes('ไอที')) detectedDepartment = "เทคโนโลยีสารสนเทศ/คอมพิวเตอร์";
+          // --- สายสามัญ ---
+          else if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) detectedDepartment = "วิทย์-คณิต";
+          else if (fn.includes('คณิตเพิ่มเติม') || (fn.includes('ค3') && !fn.includes('ว3'))) detectedDepartment = "ศิลป์-คำนวณ";
+          else if (fn.includes('ฝรั่งเศส') || fn.includes('จีน') || fn.includes('ญี่ปุ่น') || fn.includes('เกาหลี') || fn.includes('อ3') || fn.includes('ต3')) detectedDepartment = "ศิลป์-ภาษา";
+
+          // สรุปผล
+          if (detectedGrade && detectedDepartment) {
+            studentClass = `${detectedGrade} ${detectedDepartment}`;
+          } else if (detectedGrade) {
+            studentClass = `${detectedGrade} (สามัญ)`;
+          } else if (detectedDepartment) {
+            studentClass = detectedDepartment;
+          } else {
+            document.getElementById('scheduleStatus').innerText = "⚠️ ไม่สามารถระบุชั้น/แผนกได้ กรุณาอัปโหลดใหม่";
+            document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
+            showModal(`⚠️ ไม่สามารถวิเคราะห์ระดับชั้นได้!\n\nAI อ่านตัวหนังสือได้บางส่วน แต่ไม่พบรหัสวิชาหรือชื่อแผนกที่ชัดเจน\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีหัวตารางชัดเจนใหม่อีกครั้งครับ`);
+            return;
+          }
+
+          localStorage.setItem('student_class', studentClass);
+          localStorage.setItem('schedule_name', file.name);
+
+          document.getElementById('displayStudentClass').innerText = studentClass;
+          document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
+          document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
+
+          showModal(`🔍 AI OCR สแกนตารางเรียนสำเร็จ!\n\n- ตารางที่อัปโหลด: ${file.name}\n- ระดับชั้นและสายวิชาที่พบ: ${studentClass}\n\n💡 บันทึกข้อมูลตารางเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
+
+        } catch (err) {
+          console.error(err);
+          document.getElementById('scheduleStatus').innerText = "⚠️ สแกนรูปภาพล้มเหลว กรุณาอัปโหลดใหม่";
+          document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
+          showModal(`❌ เกิดข้อผิดพลาดในการอ่านไฟล์ภาพ!\n\nกรุณาลองอัปโหลดรูปภาพตารางเรียนใหม่อีกครั้งครับ`);
         }
-
-        studentClass = detectedResult;
-        localStorage.setItem('student_class', studentClass);
-        localStorage.setItem('schedule_name', file.name);
-
-        document.getElementById('displayStudentClass').innerText = studentClass;
-        document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
-        document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
-
-        showModal(`🔍 AI ตรวจสอบและแยกแยะตารางเรียนสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ระดับชั้นและแผนการเรียน: ${studentClass}\n\n💡 ระบบอัปเดตข้อมูลของคุณ ${userName} เรียบร้อยถาวรครับ!`);
       }
     });
 
-    // 🗑️ ฟังก์ชันลบ/เคลียร์ตารางเรียน
+    // 🗑️ ฟังก์ชันลบ/เคลียร์ตารางเรียน ล้างลึก 100%
     function clearSchedule() {
       localStorage.removeItem('student_class');
       localStorage.removeItem('schedule_name');
@@ -285,7 +328,7 @@
       document.getElementById('scheduleStatus').innerText = "สถานะ: ยังไม่ได้อัปโหลดตารางเรียน";
       document.getElementById('scheduleStatus').className = "text-[10px] text-gray-400 mt-1";
 
-      showModal(`🗑️ ลบข้อมูลตารางเรียนเรียบร้อยแล้วครับคุณ ${userName}!\n\nคุณสามารถอัปโหลดรูปตารางเรียนใหม่ได้ทันทีเลยครับ`);
+      showModal(`🗑️ ลบข้อมูลตารางเรียนทั้งหมดเรียบร้อยแล้วครับคุณ ${userName}!\n\nข้อมูลเก่าถูกล้างออกจากระบบ 100% สามารถอัปโหลดรูปตารางใหม่ได้ทันทีครับ`);
     }
 
     document.getElementById('bubbleImageInput').addEventListener('change', function(e) {
@@ -379,10 +422,11 @@
         encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้นและแผนการเรียน: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้นและสายวิชา: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
     }
   </script>
 </body>
 </html>
+
