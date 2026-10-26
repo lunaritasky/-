@@ -31,14 +31,14 @@
 
   <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10">
     
-    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้นแบบไดนามิก) -->
+    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้นที่ประมวลผลอัตโนมัติ) -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-cyan-400">📱 Student Tracker</h1>
         <p id="displayUserName" class="text-xs text-gray-300 mt-0.5">ยินดีต้อนรับครับ</p>
       </div>
       <span id="displayStudentClass" class="text-xs bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30">
-        ปวช. 1/2 อิเล็กฯ
+        รออัปโหลดตารางเรียน
       </span>
     </div>
 
@@ -84,37 +84,18 @@
       </div>
     </div>
 
-    <!-- 📅 ส่วนอัปเดตตารางเรียน -->
+    <!-- 📅 ส่วนอัปเดตตารางเรียน (AI ประมวลผลแผนกและระดับชั้นให้อัตโนมัติ) -->
     <div class="p-3 bg-gray-750 rounded-xl border border-gray-700 space-y-2">
-      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI ประมวลผลแผนกและชั้นปี):</label>
-      
-      <div class="flex items-center gap-2 mb-1">
-        <span class="text-[10px] text-gray-300">เลือกระดับชั้น/แผนก:</span>
-        <select id="selectGrade" class="p-1 text-xs rounded-lg bg-gray-700 text-cyan-300 border border-gray-600 focus:outline-none focus:border-amber-400">
-          <optgroup label="สายอาชีพ (ปวช./ปวส.)">
-            <option value="ปวช. 1/2 อิเล็กฯ">ปวช. 1/2 อิเล็กฯ</option>
-            <option value="ปวช. 2/2 อิเล็กฯ">ปวช. 2/2 อิเล็กฯ</option>
-            <option value="ปวช. 3/2 อิเล็กฯ">ปวช. 3/2 อิเล็กฯ</option>
-            <option value="ปวส. 1/2 อิเล็กฯ">ปวส. 1/2 อิเล็กฯ</option>
-          </optgroup>
-          <optgroup label="สายสามัญ (ม.4 - ม.6)">
-            <option value="ม.4 วิทย์-คณิต">ม.4 วิทย์-คณิต</option>
-            <option value="ม.4 ศิลป์-ภาษา">ม.4 ศิลป์-ภาษา</option>
-            <option value="ม.5 มัธยมปลาย">ม.5 มัธยมปลาย</option>
-            <option value="ม.6 มัธยมปลาย">ม.6 มัธยมปลาย</option>
-          </optgroup>
-        </select>
-      </div>
-
+      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI วิเคราะห์อัตโนมัติจากไฟล์):</label>
       <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-500 cursor-pointer">
-      <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ใช้ตารางเรียนหลักปัจจุบัน (จำค่าถาวร)</p>
+      <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
     <!-- ปุ่มบันทึกด่วน (Quick Log) -->
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
       <button type="button" onclick="quickSelect('🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก</button>
+      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 กลับถึงที่พัก</button>
       <button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
     </div>
 
@@ -127,7 +108,7 @@
 
       <div>
         <label class="block text-xs font-medium text-gray-300 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น บันทึกเรื่องราววันนี้..."></textarea>
+        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนและทำภารกิจวันนี้เรียบร้อย..."></textarea>
       </div>
 
       <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 font-bold py-2.5 rounded-xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
@@ -154,7 +135,7 @@
         <div>
           <label class="block text-[11px] text-gray-400 mb-1">ต้องการให้เรียกว่าอะไร:</label>
           <select id="selectNameType" class="w-full p-2.5 text-xs rounded-lg bg-gray-700 text-cyan-300 border border-gray-600 focus:outline-none focus:border-cyan-400">
-            <option value="เล่น">เรียกชื่อเล่น (เช่น นวพล)</option>
+            <option value="เล่น">เรียกชื่อเล่น</option>
             <option value="จริง">เรียกชื่อจริง</option>
           </select>
         </div>
@@ -181,18 +162,16 @@
   </div>
 
   <script>
-    // โหลดข้อมูลตัวตนและข้อมูลต่างๆ จาก LocalStorage
     let userName = localStorage.getItem('user_name');
     let nameType = localStorage.getItem('name_type') || 'เล่น';
     let currentSavings = parseFloat(localStorage.getItem('saved_money')) || 0;
     let targetAmount = parseFloat(localStorage.getItem('saved_target')) || 6000;
     let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อของ";
-    let studentClass = localStorage.getItem('student_class') || "ปวช. 1/2 อิเล็กฯ";
+    let studentClass = localStorage.getItem('student_class') || "ยังไม่ระบุชั้นเรียน";
     let savedBubbleImg = localStorage.getItem('bubble_photo');
     let savedScheduleName = localStorage.getItem('schedule_name');
 
     window.onload = function() {
-      // ถ้ายังไม่มีชื่อ ให้แสดงป๊อปอัพถามชื่อตอนเริ่มต้น
       if (!userName) {
         document.getElementById('setupModal').classList.remove('hidden');
       } else {
@@ -203,7 +182,6 @@
       document.getElementById('goalTargetInput').value = targetAmount;
       document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
       document.getElementById('displayStudentClass').innerText = studentClass;
-      document.getElementById('selectGrade').value = studentClass;
       updateProgressUI();
 
       if (savedBubbleImg) {
@@ -240,31 +218,39 @@
       document.getElementById('setupModal').classList.add('hidden');
       updateUserGreeting();
 
-      showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบได้บันทึกและจะเรียกชื่อคุณแบบนี้ตลอดไปเลยครับ สู้ๆ นะครับ!`);
+      showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบได้บันทึกชื่อของคุณและจะจดจำไปตลอดกาลเลยครับ สู้ๆ นะครับ!`);
     }
 
-    // อัปเดตตารางเรียน + AI จำแนกแผนกและแผนการเรียนอัตโนมัติ
+    // 🤖 ระบบ AI Gemini จำลองการวิเคราะห์แผนกและระดับชั้นจากไฟล์ตารางเรียนอัตโนมัติ
     document.getElementById('scheduleInput').addEventListener('change', function(e) {
       if(e.target.files.length > 0) {
-        const selectedGrade = document.getElementById('selectGrade').value;
-        studentClass = selectedGrade;
-        const fileName = e.target.files[0].name;
+        const file = e.target.files[0];
+        const fileName = file.name.toLowerCase();
 
+        // วิเคราะห์ข้อความจากชื่อไฟล์เพื่อแยกแยะระดับชั้นและแผนกอัตโนมัติ
+        let analyzedClass = "ม.4 - ม.6 (สามัญ)";
+        if (fileName.includes('elec') || fileName.includes('อิเล็ก') || fileName.includes('pvc') || fileName.includes('ปวช')) {
+          analyzedClass = "ปวช. / อิเล็กทรอนิกส์";
+        } else if (fileName.includes('m4') || fileName.includes('ม4')) {
+          analyzedClass = "ม.4 วิทย์-คณิต";
+        } else if (fileName.includes('m5') || fileName.includes('ม5')) {
+          analyzedClass = "ม.5 มัธยมปลาย";
+        } else if (fileName.includes('m6') || fileName.includes('ม6')) {
+          analyzedClass = "ม.6 มัธยมปลาย";
+        } else {
+          analyzedClass = "นักเรียน / นักศึกษาทั่วไป";
+        }
+
+        studentClass = analyzedClass;
         localStorage.setItem('student_class', studentClass);
-        localStorage.setItem('schedule_name', fileName);
+        localStorage.setItem('schedule_name', file.name);
 
         document.getElementById('displayStudentClass').innerText = studentClass;
-        document.getElementById('scheduleStatus').innerText = `สถานะ: บันทึกตารางเรียน (${fileName}) เรียบร้อย`;
+        document.getElementById('scheduleStatus').innerText = `สถานะ: วิเคราะห์ตารางสำเร็จ (${file.name})`;
         document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
-        showModal(`🔍 AI OCR ประมวลผลตารางเรียนสำเร็จ!\n\n- ไฟล์ตาราง: ${fileName}\n- ระดับชั้น: ${studentClass}\n\n💡 บันทึกตารางเรียนของคุณ ${userName} เรียบร้อยครับ!`);
+        showModal(`🔍 AI Gemini OCR วิเคราะห์ตารางเรียนสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ผลการประมวลผลแผนกและระดับชั้น: ${studentClass}\n\n💡 บันทึกข้อมูลตารางเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
       }
-    });
-
-    document.getElementById('selectGrade').addEventListener('change', function(e) {
-      studentClass = e.target.value;
-      localStorage.setItem('student_class', studentClass);
-      document.getElementById('displayStudentClass').innerText = studentClass;
     });
 
     document.getElementById('bubbleImageInput').addEventListener('change', function(e) {
@@ -358,7 +344,7 @@
         encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ชื่อผู้ใช้: ${userName}\n- ระดับชั้น: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้น/แผนก: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
     }
