@@ -52,14 +52,31 @@
       </div>
     </div>
 
-    <!-- 📊 แถบแสดงสเตจภารกิจประจำวัน -->
+    <!-- 📊 แถบแสดงสเตจภารกิจประจำวัน + ปุ่มบายพาส -->
     <div class="p-3 bg-gray-750 rounded-xl border border-blue-500/30 space-y-2">
       <div class="flex justify-between items-center text-xs">
-        <span class="font-semibold text-blue-400">📊 สเตจภารกิจวันนี้:</span>
-        <span id="displayStageText" class="font-bold text-cyan-300">Stage 0/4 (ยังไม่เริ่ม)</span>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-blue-400">📊 สเตจภารกิจวันนี้:</span>
+          <span id="displayStageText" class="font-bold text-cyan-300">Stage 0/4 (ยังไม่เริ่ม)</span>
+        </div>
+        <!-- 🔓 ปุ่มเปิด/ปิดโหมดบายพาส -->
+        <button type="button" id="bypassBtn" onclick="toggleBypass()" class="text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer" title="ปลดล็อคเพื่อข้ามสเตจ">
+          🔒 บายพาส: ปิด
+        </button>
       </div>
       <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
         <div id="stageProgressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- 🖼️ เมนูระบบดูรูปย้อนหลังประจำวัน (รีเซตอัตโนมัติ 05:30 น.) -->
+    <div class="p-3 bg-gray-750 rounded-xl border border-purple-500/30 space-y-2">
+      <div class="flex justify-between items-center">
+        <label class="block text-xs font-semibold text-purple-400">🖼️ รูปถ่ายย้อนหลังประจำวันวันนี้:</label>
+        <span id="historyCount" class="text-[10px] text-gray-400">0 รูป</span>
+      </div>
+      <div id="historyGallery" class="flex gap-2 overflow-x-auto py-1 min-h-[50px] items-center">
+        <span class="text-[11px] text-gray-500 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรูปรายงานเพื่อบันทึก)</span>
       </div>
     </div>
 
@@ -116,7 +133,7 @@
       <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
-    <!-- ปุ่มบันทึกด่วน (Quick Log พร้อมระบบ Stage 1/4 ถึง 4/4) -->
+    <!-- ปุ่มบันทึกด่วน (Quick Log พร้อมระบบล็อคสเตจและบายพาส) -->
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="handleStageLog(1, '🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน (1/4)</button>
       <button type="button" onclick="handleStageLog(2, '🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน (2/4)</button>
@@ -196,6 +213,7 @@
     let savedBubbleImg = localStorage.getItem('bubble_photo');
     let savedScheduleName = localStorage.getItem('schedule_name');
     let currentStage = parseInt(localStorage.getItem('current_stage')) || 0;
+    let isBypassActive = false;
 
     const encouragementPhrases = [
       "🐰✨ วันนี้เก่งมากๆ แล้วน้า ยิ้มกว้างๆ ลุยต่อเลย!",
@@ -229,6 +247,7 @@
 
       updateProgressUI();
       updateStageUI();
+      loadPhotoHistory();
 
       if (savedBubbleImg) {
         setupFloatingBubbles();
@@ -240,6 +259,7 @@
       }
     };
 
+    // ⏰ ตรวจสอบเวลา รีเซตสเตจ และรีเซตล้างรูปถ่ายย้อนหลังอัตโนมัติทุกๆ ตี 5:30 น.
     function checkAndResetDailyAt530() {
       const now = new Date();
       const currentHour = now.getHours();
@@ -253,6 +273,7 @@
       if (lastResetDate !== todayStr && currentTimeInMinutes >= resetTimeInMinutes) {
         currentStage = 0;
         localStorage.setItem('current_stage', 0);
+        localStorage.removeItem('daily_photo_history'); // ล้างรูปถ่ายย้อนหลังของวันเก่าทิ้ง
         localStorage.setItem('last_reset_date', todayStr);
       }
     }
@@ -265,6 +286,20 @@
       window.location.reload();
     }
 
+    function toggleBypass() {
+      isBypassActive = !isBypassActive;
+      const btn = document.getElementById('bypassBtn');
+      if (isBypassActive) {
+        btn.innerText = "🔓 บายพาส: เปิด";
+        btn.className = "text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer";
+        showModal(`🔓 เปิดโหมดบายพาสสำเร็จ!\n\nคุณสามารถกดข้ามหรือเลือกสเตจภารกิจได้อย่างอิสระชั่วคราว`);
+      } else {
+        btn.innerText = "🔒 บายพาส: ปิด";
+        btn.className = "text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer";
+        showModal(`🔒 ปิดโหมดบายพาสแล้ว!\n\nระบบกลับมาบังคับล็อคสเตจตามลำดับเรียบร้อยครับ`);
+      }
+    }
+
     function updateStageUI() {
       let percent = (currentStage / 4) * 100;
       document.getElementById('stageProgressBar').style.width = `${percent}%`;
@@ -273,11 +308,15 @@
       if (currentStage === 0) stageText = `Stage 0/4 (ยังไม่เริ่ม)`;
       if (currentStage === 4) stageText = `Stage 4/4 (สำเร็จครบวันแล้ว 🎉)`;
       
-      document.getElementById('displayStudentClass').innerText = studentClass ? `${studentClass} | ${stageText}` : stageText;
       document.getElementById('displayStageText').innerText = stageText;
     }
 
     function handleStageLog(stageNum, actionText) {
+      if (!isBypassActive && stageNum > currentStage + 1) {
+        showModal(`⚠️ ไม่สามารถทำสเตจนี้ได้!\n\nคุณยังทำภารกิจ Stage ${currentStage} ไม่เสร็จเรียบร้อย กรุณาทำตามลำดับ หรือกดปุ่ม 🔓 บายพาส ที่มุมขวาเพื่อปลดล็อคชั่วคราวครับ!`);
+        return;
+      }
+
       currentStage = stageNum;
       localStorage.setItem('current_stage', currentStage);
       updateStageUI();
@@ -289,6 +328,32 @@
       let encouragement = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
       
       showModal(`📌 บันทึกสเตจสำเร็จ!\n\n- 🎯 ภารกิจ: ${actionText}\n- 📊 สเตจปัจจุบัน: Stage ${currentStage}/4\n\n${encouragement}`);
+    }
+
+    // 🖼️ โหลดและแสดงรูปถ่ายย้อนหลังประจำวัน
+    function loadPhotoHistory() {
+      const historyGallery = document.getElementById('historyGallery');
+      const historyCount = document.getElementById('historyCount');
+      let historyData = JSON.parse(localStorage.getItem('daily_photo_history')) || [];
+
+      if (historyData.length === 0) {
+        historyGallery.innerHTML = `<span class="text-[11px] text-gray-500 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรูปรายงานเพื่อบันทึก)</span>`;
+        historyCount.innerText = `0 รูป`;
+        return;
+      }
+
+      historyGallery.innerHTML = '';
+      historyCount.innerText = `${historyData.length} รูป`;
+
+      historyData.forEach((imgBase64, index) => {
+        const imgThumb = document.createElement('div');
+        imgThumb.className = "w-12 h-12 rounded-lg border border-purple-500/40 overflow-hidden bg-gray-900 cursor-pointer shrink-0 shadow-sm hover:scale-105 transition";
+        imgThumb.innerHTML = `<img src="${imgBase64}" class="w-full h-full object-cover" title="แตะเพื่อดูรูปใหญ่">`;
+        imgThumb.onclick = function() {
+          showModal(`🖼️ รูปถ่ายย้อนหลัง (รูปที่ ${index + 1}):\n\n<img src="${imgBase64}" class="w-full rounded-xl mt-2 border border-purple-500/30">`);
+        };
+        historyGallery.appendChild(imgThumb);
+      });
     }
 
     function saveUserIdentity() {
@@ -349,7 +414,6 @@
       }, delay);
     }
 
-    // 🧠 ระบบ AI OCR สแกนตารางเรียน พร้อมระบบตรวจจับความผิดพลาดเมื่อไม่พบข้อความหรือข้อมูล
     document.getElementById('scheduleInput').addEventListener('change', async function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -365,7 +429,6 @@
           const extractedText = ret.data.text.trim();
           const fn = (file.name + " " + extractedText).toLowerCase();
 
-          // ❌ ระบบตรวจจับความผิดพลาด: หากไม่พบตัวอักษรใดๆ หรือข้อความน้อยเกินไป
           if (!extractedText || extractedText.length < 5) {
             document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบตัวอักษรใดๆ ในรูปภาพ กรุณาอัปโหลดใหม่";
             document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
@@ -374,8 +437,6 @@
           }
 
           let detectedClass = "";
-
-          // 🛠️ เช็กสายอาชีวะ (ช่าง / พาณิชย์ / คหกรรม / ท่องเที่ยว / ดิจิทัล)
           let isVocational = fn.includes('ปวช') || fn.includes('ปวส') || fn.includes('ชอ.') || fn.includes('ชอ') || fn.includes('ชฟ') || fn.includes('ชย') || fn.includes('ชก') || fn.includes('elec') || fn.includes('อิเล็ก') || fn.includes('บัญชี') || fn.includes('การตลาด') || fn.includes('ท่องเที่ยว') || fn.includes('ดิจิทัล') || fn.includes('อาหาร') || fn.includes('ยานยนต์') || fn.includes('เครื่องกล') || fn.includes('เชื่อม') || fn.includes('ก่อสร้าง') || fn.includes('เมคคา');
 
           if (isVocational) {
@@ -409,7 +470,6 @@
             else detectedClass = `${vocLevel} ช่างอุตสาหกรรมทั่วไป`;
 
           } else {
-            // 📚 สายสามัญ (ม.4, ม.5, ม.6)
             let levelPrefix = "";
             if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
             else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
@@ -422,7 +482,6 @@
                 detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
               }
             } else {
-              // ❌ ระบบตรวจจับข้อผิดพลาด: หากอ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้นหรือแผนกที่ตรงกับเงื่อนไข
               document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนก กรุณาอัปโหลดใหม่";
               document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
               showModal(`⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนกวิชาในรูปภาพ!\n\nAI อ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้น (ม.4-6, ปวช., ปวส.) หรือชื่อแผนกที่ถูกต้อง\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีข้อความชัดเจนใหม่อีกครั้งครับ!`);
@@ -434,7 +493,7 @@
           localStorage.setItem('student_class', studentClass);
           localStorage.setItem('schedule_name', file.name);
 
-          updateStageUI();
+          document.getElementById('displayStudentClass').innerText = studentClass;
           document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
           document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
@@ -454,7 +513,7 @@
       localStorage.removeItem('schedule_name');
       studentClass = "";
       
-      updateStageUI();
+      document.getElementById('displayStudentClass').innerText = "ยังไม่ได้อัปโหลดตาราง";
       document.getElementById('scheduleInput').value = "";
       document.getElementById('scheduleStatus').innerText = "สถานะ: ยังไม่ได้อัปโหลดตารางเรียน";
       document.getElementById('scheduleStatus').className = "text-[10px] text-gray-400 mt-1";
@@ -484,7 +543,7 @@
     }
 
     function showModal(message) {
-      document.getElementById('modalMessage').innerText = message;
+      document.getElementById('modalMessage').innerHTML = message;
       document.getElementById('customModal').classList.remove('hidden');
     }
 
@@ -531,6 +590,7 @@
       showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับคุณ ${userName} อีกนิดเดียวก็ถึงเป้าหมายแล้ว!`);
     }
 
+    // 📸 บันทึกรายงานประจำวัน และเก็บรูปเข้าประวัติย้อนหลัง
     function handleFormSubmit(event) {
       event.preventDefault();
       const note = document.getElementById('userNote').value;
@@ -541,14 +601,29 @@
         return;
       }
 
+      if (imageInput.files.length > 0) {
+        const file = imageInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const base64Img = event.target.result;
+          let historyData = JSON.parse(localStorage.getItem('daily_photo_history')) || [];
+          historyData.push(base64Img);
+          localStorage.setItem('daily_photo_history', JSON.stringify(historyData));
+          loadPhotoHistory();
+        };
+        reader.readAsDataURL(file);
+      }
+
       let encouragement = `💖 เก่งมากครับคุณ ${userName}! วันนี้มีความตั้งใจและมีวินัยสุดๆ ขอให้เป็นวันที่ราบรื่นและมีความสุข พักผ่อนเยอะๆ นะครับ!`;
       if (imageInput.files.length > 0) {
-        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
+        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้ถูกบันทึกใน "รูปถ่ายย้อนหลังประจำวัน" เรียบร้อยแล้วครับ สู้ๆ ครับ คนเก่ง!`;
       }
 
       let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- สเตจภารกิจ: Stage ${currentStage}/4\n- ระดับชั้นและแผนก: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
+      document.getElementById('userNote').value = '';
+      imageInput.value = '';
     }
   </script>
 </body>
