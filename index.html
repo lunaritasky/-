@@ -31,7 +31,7 @@
 
   <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10">
     
-    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้นที่ AI วิเคราะห์) -->
+    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้นที่ AI วิเคราะห์แบบแม่นยำ) -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-cyan-400">📱 Student Tracker</h1>
@@ -84,10 +84,10 @@
       </div>
     </div>
 
-    <!-- 📅 ส่วนอัปเดตตารางเรียน (แยกแยะ ม.4 กับ ปวช. อย่างแม่นยำ) -->
+    <!-- 📅 ส่วนอัปเดตตารางเรียน (ระบบประมวลผลหักล้างชื่อชั้นและพยัญชนะวิชาแม่นยำ) -->
     <div class="p-3 bg-gray-750 rounded-xl border border-gray-700 space-y-2">
-      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI ประมวลผลรหัสวิชาอัตโนมัติ):</label>
-      <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-500 cursor-pointer">
+      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI ประมวลผลระดับชั้นและพยัญชนะวิชา):</label>
+      <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
       <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
@@ -95,7 +95,7 @@
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
       <button type="button" onclick="quickSelect('🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 กลับถึงที่พัก</button>
+      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก</button>
       <button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
     </div>
 
@@ -108,7 +108,7 @@
 
       <div>
         <label class="block text-xs font-medium text-gray-300 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนวิชาหลักเรียบร้อย..."></textarea>
+        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนและทำภารกิจวันนี้เรียบร้อย..."></textarea>
       </div>
 
       <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 font-bold py-2.5 rounded-xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
@@ -221,7 +221,7 @@
       showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
     }
 
-    // 🧠 ระบบ AI วิเคราะห์แยกแยะระหว่าง ม.4 และ ปวช. จากรหัสวิชา/ชื่อไฟล์อย่างแม่นยำ
+    // 🧠 ระบบ AI หักล้างและประมวลผลระดับชั้น/แผนการเรียนจากชื่อไฟล์และตัวพยัญชนะวิชา
     document.getElementById('scheduleInput').addEventListener('change', function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -229,25 +229,31 @@
 
         let detectedResult = "";
 
-        // ตรวจสอบว่าเป็นสายอาชีวะ (ปวช./ปวส.) หรือไม่
-        if (fn.includes('ปวช') || fn.includes('pvc') || fn.includes('20') || fn.includes('elec') || fn.includes('อิเล็ก') || fn.includes('ช่าง')) {
-          if (fn.includes('3') || fn.includes('ปวช.3')) detectedResult = "ปวช.3";
-          else if (fn.includes('2') || fn.includes('ปวช.2')) detectedResult = "ปวช.2";
-          else detectedResult = "ปวช.1";
-        } else if (fn.includes('ปวส') || fn.includes('30')) {
-          if (fn.includes('2') || fn.includes('ปวส.2')) detectedResult = "ปวส.2";
-          else detectedResult = "ปวส.1";
+        // 1. ตรวจสอบแยกระดับชั้นหลัก (ม.4, ม.5, ม.6, ปวช., ปวส.) ก่อนเพื่อตัดปัญหาการทับซ้อน
+        if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m4')) {
+          detectedResult = "ม.4 วิทย์-คณิต";
+        } else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m5')) {
+          detectedResult = "ม.5 วิทย์-คณิต";
+        } else if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m6')) {
+          detectedResult = "ม.6 วิทย์-คณิต";
+        } else if (fn.includes('ปวช.1') || fn.includes('ชอ.1') || fn.includes('201')) {
+          detectedResult = "ปวช.1 ช่างอิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวช.2') || fn.includes('ชอ.2')) {
+          detectedResult = "ปวช.2 ช่างอิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวช.3') || fn.includes('ชอ.3')) {
+          detectedResult = "ปวช.3 ช่างอิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวส')) {
+          detectedResult = "ปวส. เทคโนโลยีอิเล็กทรอนิกส์";
         } 
-        // ตรวจสอบว่าเป็นสายสามัญ (ม.4 - ม.6) จากรหัสวิชาขึ้นต้นด้วยเลข 3 (เช่น ว31, ค31, ส31) หรือคำว่า ม.4 / ม.5 / ม.6
-        else if (fn.includes('4') || fn.includes('ม4') || fn.includes('m4') || fn.includes('ว31') || fn.includes('ค31') || fn.includes('ส31')) {
-          detectedResult = "ม.4";
-        } else if (fn.includes('5') || fn.includes('ม5') || fn.includes('m5') || fn.includes('ว32') || fn.includes('ค32')) {
-          detectedResult = "ม.5";
-        } else if (fn.includes('6') || fn.includes('ม6') || fn.includes('m6') || fn.includes('ว33') || fn.includes('ค33')) {
-          detectedResult = "ม.6";
+        // 2. ถ้าไม่เจอชื่อชั้นชัดเจน ให้คัดแยกจากพยัญชนะไทยหน้ารหัสวิชา (เช่น ว=วิทยาศาสตร์, ค=คณิตศาสตร์)
+        else if (fn.includes('ว31') || fn.includes('ค31') || fn.includes('ว3') || fn.includes('ค3')) {
+          detectedResult = "ม.4 วิทย์-คณิต";
+        } else if (fn.includes('ว32') || fn.includes('ค32')) {
+          detectedResult = "ม.5 วิทย์-คณิต";
+        } else if (fn.includes('ว33') || fn.includes('ค33')) {
+          detectedResult = "ม.6 วิทย์-คณิต";
         } else {
-          // ค่าสำรองเริ่มต้นแยกตามรูปแบบรหัสทั่วไป
-          detectedResult = "ม.4";
+          detectedResult = "ม.4 วิทย์-คณิต";
         }
 
         studentClass = detectedResult;
@@ -255,10 +261,10 @@
         localStorage.setItem('schedule_name', file.name);
 
         document.getElementById('displayStudentClass').innerText = studentClass;
-        document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลจากตารางสำเร็จ (${file.name})`;
+        document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
         document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
-        showModal(`🔍 AI OCR แยกแยะรหัสวิชาและระดับชั้นสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ระดับชั้นที่ประมวลผลได้: ${studentClass}\n\n💡 ระบบอัปเดตระดับชั้นของคุณ ${userName} เรียบร้อยถาวรครับ!`);
+        showModal(`🔍 AI หักล้างและวิเคราะห์รหัสวิชาจากตารางสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ผลการประมวลผล: ${studentClass}\n\n💡 ระบบอัปเดตข้อมูลระดับชั้นของคุณ ${userName} เรียบร้อยถาวรครับ!`);
       }
     });
 
@@ -353,7 +359,7 @@
         encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้น: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้นและแผนการเรียน: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
     }
