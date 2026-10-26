@@ -8,13 +8,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    body { font-family: 'Prompt', sans-serif; overflow-x: hidden; }
+    /* 📱 ตั้งค่าหน้าเว็บให้เลื่อนขึ้นลงได้สมบูรณ์บน iPad / มือถือ */
+    html, body {
+      font-family: 'Prompt', sans-serif;
+      height: 100%;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
     
-    /* 🫧 แอนิเมชันฟองสบู่พุ่งกระจายอย่างรวดเร็วและจางหาย */
     @keyframes fastFloatAndFade {
       0% { transform: translateY(0px) scale(0.6) rotate(0deg); opacity: 0; }
-      20% { opacity: 0.9; transform: translateY(-50px) scale(1.1) rotate(5deg); }
-      80% { opacity: 0.9; transform: translateY(-250px) scale(1) rotate(-5deg); }
+      20% { opacity: 0.95; transform: translateY(-50px) scale(1.1) rotate(5deg); }
+      80% { opacity: 0.95; transform: translateY(-250px) scale(1) rotate(-5deg); }
       100% { transform: translateY(-320px) scale(0.8) rotate(10deg); opacity: 0; }
     }
 
@@ -23,12 +28,12 @@
     }
   </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-4 flex items-center justify-center relative overflow-hidden">
+<body class="bg-gray-900 text-white min-h-screen p-4 flex flex-col items-center justify-start relative">
 
   <!-- 🫧 พื้นที่สุ่มสร้างฟองสบู่ลอยเร็วๆ วนลูปต่อเนื่อง -->
   <div id="floatingBubblesContainer" class="fixed inset-0 pointer-events-none z-40 overflow-hidden hidden"></div>
 
-  <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10">
+  <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10 my-auto">
     
     <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้น) -->
     <div class="flex items-center justify-between">
@@ -174,16 +179,16 @@
     let savedBubbleImg = localStorage.getItem('bubble_photo');
     let savedScheduleName = localStorage.getItem('schedule_name');
 
-    // 💖 คลังข้อความสุ่มให้กำลังใจสุดอบอุ่น
+    // 💖 คลังข้อความน่ารักๆ พร้อมอีโมจิพลังบวก
     const encouragementPhrases = [
-      "สู้ๆ นะคนเก่ง วันนี้มีความสุขมากๆ น้า!",
-      "เก่งที่สุดเลย ตั้งใจเรียนและพักผ่อนด้วยนะ!",
-      "ทุกความพยายามมีความหมาย สู้ไปด้วยกัน!",
-      "ยิ้มเยอะๆ นะ วันนี้ต้องเป็นวันของเราแน่นอน!",
-      "เหนื่อยก็พักได้นะ มีคนคอยส่งกำลังใจให้อยู่ตรงนี้!",
-      "เก่งมากที่อดทนมาถึงวันนี้ ลุยต่อเลย!",
-      "เธอทำได้อยู่แล้ว มั่นใจในตัวเองเข้าไว้!",
-      "ส่งพลังบวกให้รัวๆ ขอให้วันนี้ราบรื่นทุกอย่าง!"
+      "🐰✨ วันนี้เก่งมากๆ แล้วน้า ยิ้มกว้างๆ ลุยต่อเลย!",
+      "🧸💖 คนเก่งของระบบสู้ๆ ขอให้วันนี้มีแต่เรื่อง 300%!",
+      "🌟🚀 ทุกความพยายามมีความหมาย เธอทำได้แน่นอน!",
+      "🌸💫 ส่งพลังบวกให้รัวๆ พักผ่อนเยอะๆ ด้วยนะ!",
+      "🎉💖 เก่งที่สุดในสามโลก ลุยไปด้วยกันเล้ย!",
+      "🍀✨ วันนี้ต้องเป็นวันของเรา สู้ตายค่า/ครับ!",
+      "🐱💕 เหนื่อยก็พัก เติมกำลังใจให้ตัวเองน้า คนเก่ง!",
+      "🦄✨ ส่งยิ้มหวานๆ ให้ตัวเองทีนึง คนเก่งสู้ๆ!"
     ];
 
     window.onload = function() {
@@ -240,15 +245,13 @@
       showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
     }
 
-    // 🫧 ฟังก์ชันสร้างและรัวฟองสบู่ลอยแบบรวดเร็ว วนลูปไม่รู้จบ
     function setupFloatingBubbles() {
       const container = document.getElementById('floatingBubblesContainer');
       container.innerHTML = '';
       container.classList.remove('hidden');
 
-      // สร้างฟองสบู่หลายๆ ลูกลอยสลับกันอย่างรวดเร็ว
       for (let i = 0; i < 5; i++) {
-        createMovingBubble(container, i * 600); // ดีเลย์เวลาให้ลอยเหลื่อมกัน
+        createMovingBubble(container, i * 600);
       }
     }
 
@@ -257,10 +260,9 @@
         if (!localStorage.getItem('bubble_photo')) return;
 
         const bubbleDiv = document.createElement('div');
-        // สุ่มตำแหน่งแกน X ซ้าย-ขวา
         const randomX = Math.floor(Math.random() * 75) + 10; 
-        const randomSize = Math.floor(Math.random() * 20) + 65; // ขนาด 65px - 85px
-        const randomDuration = (Math.random() * 1.5 + 2).toFixed(1); // ความเร็ว 2s - 3.5s
+        const randomSize = Math.floor(Math.random() * 20) + 65; 
+        const randomDuration = (Math.random() * 1.5 + 2).toFixed(1); 
         const randomPhrase = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
 
         bubbleDiv.className = `absolute bottom-[-100px] flex flex-col items-center z-40`;
@@ -271,8 +273,8 @@
           <div class="relative rounded-full border-3 border-pink-400 shadow-lg shadow-pink-500/40 overflow-hidden bg-gray-800" style="width: ${randomSize}px; height: ${randomSize}px;">
             <img src="${localStorage.getItem('bubble_photo')}" class="w-full h-full object-cover">
           </div>
-          <span class="text-[9px] text-pink-200 mt-1 bg-black/70 px-2 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap shadow-md border border-pink-500/30">
-            💖 ${randomPhrase}
+          <span class="text-[9px] text-pink-200 mt-1 bg-black/70 px-2.5 py-1 rounded-full backdrop-blur-sm whitespace-nowrap shadow-md border border-pink-500/30 font-medium">
+            ${randomPhrase}
           </span>
         `;
 
@@ -280,7 +282,6 @@
       }, delay);
     }
 
-    // 🧠 ระบบ AI OCR สแกนตารางเรียน
     document.getElementById('scheduleInput').addEventListener('change', async function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -355,7 +356,6 @@
       }
     });
 
-    // 🗑️ ฟังก์ชันลบ/เคลียร์ตารางเรียน ล้างข้อมูลตารางทิ้ง 100%
     function clearSchedule() {
       localStorage.removeItem('student_class');
       localStorage.removeItem('schedule_name');
@@ -466,3 +466,4 @@
   </script>
 </body>
 </html>
+
