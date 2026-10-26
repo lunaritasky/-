@@ -45,10 +45,21 @@
         <span id="displayStudentClass" class="text-xs bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30">
           ยังไม่ได้อัปโหลดตาราง
         </span>
-        <!-- 🔄 ปุ่มรีเฟรชหน้าเว็บ (รีเฟรชเฉพาะเว็บ ไม่ลบข้อมูล) -->
+        <!-- 🔄 ปุ่มรีเฟรชหน้าเว็บ -->
         <button type="button" onclick="refreshPage()" class="bg-gray-700 hover:bg-gray-600 text-cyan-400 p-1.5 rounded-full border border-cyan-500/30 transition active:scale-90 cursor-pointer" title="รีเฟรชหน้าเว็บ">
           🔄
         </button>
+      </div>
+    </div>
+
+    <!-- 📊 แถบแสดงสเตจภารกิจประจำวัน -->
+    <div class="p-3 bg-gray-750 rounded-xl border border-blue-500/30 space-y-2">
+      <div class="flex justify-between items-center text-xs">
+        <span class="font-semibold text-blue-400">📊 สเตจภารกิจวันนี้:</span>
+        <span id="displayStageText" class="font-bold text-cyan-300">Stage 0/4 (ยังไม่เริ่ม)</span>
+      </div>
+      <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+        <div id="stageProgressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
       </div>
     </div>
 
@@ -105,12 +116,12 @@
       <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
-    <!-- ปุ่มบันทึกด่วน (Quick Log) -->
+    <!-- ปุ่มบันทึกด่วน (Quick Log พร้อมระบบ Stage 1/4 ถึง 4/4) -->
     <div class="grid grid-cols-2 gap-2">
-      <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
-      <button type="button" onclick="quickSelect('🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก</button>
-      <button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
+      <button type="button" onclick="handleStageLog(1, '🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน (1/4)</button>
+      <button type="button" onclick="handleStageLog(2, '🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน (2/4)</button>
+      <button type="button" onclick="handleStageLog(3, '🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก (3/4)</button>
+      <button type="button" onclick="handleStageLog(4, '🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน (4/4)</button>
     </div>
 
     <!-- ฟอร์มรายงานประจำวัน -->
@@ -184,8 +195,8 @@
     let studentClass = localStorage.getItem('student_class') || "";
     let savedBubbleImg = localStorage.getItem('bubble_photo');
     let savedScheduleName = localStorage.getItem('schedule_name');
+    let currentStage = parseInt(localStorage.getItem('current_stage')) || 0;
 
-    // 💖 คลังข้อความน่ารักๆ พร้อมอีโมจิพลังบวก
     const encouragementPhrases = [
       "🐰✨ วันนี้เก่งมากๆ แล้วน้า ยิ้มกว้างๆ ลุยต่อเลย!",
       "🧸💖 คนเก่งของระบบสู้ๆ ขอให้วันนี้มีแต่เรื่อง 300%!",
@@ -198,6 +209,8 @@
     ];
 
     window.onload = function() {
+      checkAndResetDailyAt530();
+
       if (!userName) {
         document.getElementById('setupModal').classList.remove('hidden');
       } else {
@@ -215,6 +228,7 @@
       }
 
       updateProgressUI();
+      updateStageUI();
 
       if (savedBubbleImg) {
         setupFloatingBubbles();
@@ -226,13 +240,55 @@
       }
     };
 
+    function checkAndResetDailyAt530() {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const todayStr = now.toDateString();
+      const lastResetDate = localStorage.getItem('last_reset_date');
+
+      const currentTimeInMinutes = currentHour * 60 + currentMinute;
+      const resetTimeInMinutes = 5 * 60 + 30; // 05:30
+
+      if (lastResetDate !== todayStr && currentTimeInMinutes >= resetTimeInMinutes) {
+        currentStage = 0;
+        localStorage.setItem('current_stage', 0);
+        localStorage.setItem('last_reset_date', todayStr);
+      }
+    }
+
     function updateUserGreeting() {
       document.getElementById('displayUserName').innerText = `ผู้ใช้งาน: ${userName} (${nameType === 'เล่น' ? 'ชื่อเล่น' : 'ชื่อจริง'})`;
     }
 
-    // 🔄 ฟังก์ชันรีเฟรชหน้าเว็บ (รีโหลดหน้าจอเว็บโดยไม่ลบข้อมูลใน LocalStorage)
     function refreshPage() {
       window.location.reload();
+    }
+
+    function updateStageUI() {
+      let percent = (currentStage / 4) * 100;
+      document.getElementById('stageProgressBar').style.width = `${percent}%`;
+      
+      let stageText = `Stage ${currentStage}/4 (กำลังดำเนิน 🚀)`;
+      if (currentStage === 0) stageText = `Stage 0/4 (ยังไม่เริ่ม)`;
+      if (currentStage === 4) stageText = `Stage 4/4 (สำเร็จครบวันแล้ว 🎉)`;
+      
+      document.getElementById('displayStudentClass').innerText = studentClass ? `${studentClass} | ${stageText}` : stageText;
+      document.getElementById('displayStageText').innerText = stageText;
+    }
+
+    function handleStageLog(stageNum, actionText) {
+      currentStage = stageNum;
+      localStorage.setItem('current_stage', currentStage);
+      updateStageUI();
+
+      const now = new Date();
+      const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      document.getElementById('userNote').value = `${timeString} น. - ${actionText}`;
+
+      let encouragement = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
+      
+      showModal(`📌 บันทึกสเตจสำเร็จ!\n\n- 🎯 ภารกิจ: ${actionText}\n- 📊 สเตจปัจจุบัน: Stage ${currentStage}/4\n\n${encouragement}`);
     }
 
     function saveUserIdentity() {
@@ -293,6 +349,7 @@
       }, delay);
     }
 
+    // 🧠 ระบบ AI OCR สแกนตารางเรียนพร้อมครอบคลุมทุกแผนกอาชีวะและสายสามัญ
     document.getElementById('scheduleInput').addEventListener('change', async function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -316,48 +373,62 @@
           }
 
           let detectedClass = "";
+          let levelPrefix = "";
 
-          if (fn.includes('ปวช.3') || fn.includes('ปวช3') || fn.includes('ชอ.3')) {
-            detectedClass = "ปวช.3 ช่างอิเล็กทรอนิกส์";
-          } else if (fn.includes('ปวช.2') || fn.includes('ปวช2') || fn.includes('ชอ.2')) {
-            detectedClass = "ปวช.2 ช่างอิเล็กทรอนิกส์";
-          } else if (fn.includes('ปวช.1') || fn.includes('ปวช1') || fn.includes('ชอ.1') || fn.includes('ปวช') || fn.includes('ชอ') || fn.includes('elec') || fn.includes('อิเล็ก')) {
-            detectedClass = "ปวช.1 ช่างอิเล็กทรอนิกส์";
-          } else if (fn.includes('ไฟฟ้า') || fn.includes('ชฟ')) {
-            detectedClass = "ปวช. ช่างไฟฟ้ากำลัง";
-          } else if (fn.includes('ยนต์') || fn.includes('ชย')) {
-            detectedClass = "ปวช. ช่างยนต์";
-          } else if (fn.includes('ปวส')) {
-            detectedClass = "ปวส. เทคโนโลยีอิเล็กทรอนิกส์";
-          } else {
-            let levelPrefix = "";
-            if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
-            else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
-            else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) levelPrefix = "ม.4";
+          // ตรวจสอบระดับชั้น ปวช. / ปวส. / ม.ปลาย
+          if (fn.includes('ปวช.3') || fn.includes('ปวช3')) levelPrefix = "ปวช.3";
+          else if (fn.includes('ปวช.2') || fn.includes('ปวช2')) levelPrefix = "ปวช.2";
+          else if (fn.includes('ปวช.1') || fn.includes('ปวช1') || fn.includes('ปวช')) levelPrefix = "ปวช.1";
+          else if (fn.includes('ปวส.2') || fn.includes('ปวส2')) levelPrefix = "ปวส.2";
+          else if (fn.includes('ปวส.1') || fn.includes('ปวส1') || fn.includes('ปวส')) levelPrefix = "ปวส.1";
+          else if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
+          else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
+          else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) levelPrefix = "ม.4";
+          else levelPrefix = "ปวช."; // ค่าเริ่มต้นสำหรับอาชีวะ
 
-            if (levelPrefix) {
-              if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) {
-                detectedClass = `${levelPrefix} วิทย์-คณิต`;
-              } else {
-                detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
-              }
+          // ตรวจสอบแผนกวิชาตามที่คุณกำหนด
+          if (fn.includes('ยานยนต์ไฟฟ้า') || fn.includes('เทคนิคยานยนต์')) detectedClass = `${levelPrefix} เทคนิคยานยนต์ไฟฟ้า`;
+          else if (fn.includes('เครื่องกล') || fn.includes('ชย')) detectedClass = `${levelPrefix} เทคนิคเครื่องกล / ช่างยนต์`;
+          else if (fn.includes('ช่างยนต์')) detectedClass = `${levelPrefix} ช่างยนต์`;
+          else if (fn.includes('เทคนิคการผลิต') || fn.includes('กลโรงงาน')) detectedClass = `${levelPrefix} ช่างกลโรงงาน / เทคนิคการผลิต`;
+          else if (fn.includes('เชื่อม') || fn.includes('โลหะ')) detectedClass = `${levelPrefix} ช่างเชื่อม / เทคนิคโลหะ`;
+          else if (fn.includes('ไฟฟ้ากำลัง') || fn.includes('ชฟ')) detectedClass = `${levelPrefix} ช่างไฟฟ้ากำลัง`;
+          else if (fn.includes('อิเล็ก') || fn.includes('ชอ') || fn.includes('elec')) detectedClass = `${levelPrefix} ช่างอิเล็กทรอนิกส์`;
+          else if (fn.includes('เมคคา') || fn.includes('หุ่นยนต์')) detectedClass = `${levelPrefix} เมคคาทรอนิกส์และหุ่นยนต์`;
+          else if (fn.includes('ก่อสร้าง') || fn.includes('สถาปัตยกรรม')) detectedClass = `${levelPrefix} ช่างก่อสร้าง / สถาปัตยกรรม`;
+          else if (fn.includes('ปิโตรเคมี') || fn.includes('เคมีอุตสาหกรรม')) detectedClass = `${levelPrefix} ปิโตรเคมี / เคมีอุตสาหกรรม`;
+          else if (fn.includes('ยาง') || fn.includes('พอลิเมอร์')) detectedClass = `${levelPrefix} เทคโนโลยียางและพอลิเมอร์`;
+          else if (fn.includes('เครื่องมือวัด') || fn.includes('ควบคุม')) detectedClass = `${levelPrefix} เครื่องมือวัดและควบคุม`;
+          else if (fn.includes('เทคนิคพื้นฐาน')) detectedClass = `${levelPrefix} เทคนิคพื้นฐาน`;
+          // พาณิชยกรรม / บริหารธุรกิจ
+          else if (fn.includes('บัญชี')) detectedClass = `${levelPrefix} การบัญชี`;
+          else if (fn.includes('การตลาด') || fn.includes('ค้าปลีก')) detectedClass = `${levelPrefix} การตลาดและธุรกิจค้าปลีก`;
+          else if (fn.includes('สำนักงานดิจิทัล')) detectedClass = `${levelPrefix} การจัดการสำนักงานดิจิทัล`;
+          else if (fn.includes('โลจิสติกส์')) detectedClass = `${levelPrefix} การจัดการโลจิสติกส์`;
+          // คหกรรมศาสตร์ / ท่องเที่ยว / ดิจิทัล
+          else if (fn.includes('อาหาร') || fn.includes('โภชนาการ')) detectedClass = `${levelPrefix} อาหารและโภชนาการ`;
+          else if (fn.includes('ท่องเที่ยว')) detectedClass = `${levelPrefix} การท่องเที่ยว`;
+          else if (fn.includes('ดิจิทัล') || fn.includes('ecommerce') || fn.includes('คอนเทนต์')) detectedClass = `${levelPrefix} เทคโนโลยีธุรกิจดิจิทัล`;
+          // สายสามัญ
+          else if (levelPrefix.startsWith('ม.')) {
+            if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) {
+              detectedClass = `${levelPrefix} วิทย์-คณิต`;
             } else {
-              document.getElementById('scheduleStatus').innerText = "⚠️ ไม่สามารถระบุชั้น/แผนกได้ กรุณาอัปโหลดใหม่";
-              document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
-              showModal(`⚠️ ไม่สามารถวิเคราะห์ระดับชั้นได้!\n\nAI อ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้นหรือรหัสวิชาที่ตรงกับเงื่อนไข\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีข้อความชัดเจนใหม่อีกครั้งครับ`);
-              return;
+              detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
             }
+          } else {
+            detectedClass = `${levelPrefix} ช่างอุตสาหกรรมทั่วไป`;
           }
 
           studentClass = detectedClass;
           localStorage.setItem('student_class', studentClass);
           localStorage.setItem('schedule_name', file.name);
 
-          document.getElementById('displayStudentClass').innerText = studentClass;
+          updateStageUI();
           document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
           document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
-          showModal(`🔍 AI OCR สแกนตารางเรียนสำเร็จ!\n\n- ตารางที่อัปโหลด: ${file.name}\n- ระดับชั้นและสายการเรียน: ${studentClass}\n\n💡 บันทึกข้อมูลตารางเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
+          showModal(`🔍 AI OCR สแกนตารางเรียนสำเร็จ!\n\n- ตารางที่อัปโหลด: ${file.name}\n- ระดับชั้นและแผนก: ${studentClass}\n\n💡 บันทึกข้อมูลตารางเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
 
         } catch (err) {
           console.error(err);
@@ -373,7 +444,7 @@
       localStorage.removeItem('schedule_name');
       studentClass = "";
       
-      document.getElementById('displayStudentClass').innerText = "ยังไม่ได้อัปโหลดตาราง";
+      updateStageUI();
       document.getElementById('scheduleInput').value = "";
       document.getElementById('scheduleStatus').innerText = "สถานะ: ยังไม่ได้อัปโหลดตารางเรียน";
       document.getElementById('scheduleStatus').className = "text-[10px] text-gray-400 mt-1";
@@ -450,12 +521,6 @@
       showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับคุณ ${userName} อีกนิดเดียวก็ถึงเป้าหมายแล้ว!`);
     }
 
-    function quickSelect(actionText) {
-      const now = new Date();
-      const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      document.getElementById('userNote').value = `${timeString} น. - ${actionText}`;
-    }
-
     function handleFormSubmit(event) {
       event.preventDefault();
       const note = document.getElementById('userNote').value;
@@ -471,7 +536,7 @@
         encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้นและสายการเรียน: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- สเตจภารกิจ: Stage ${currentStage}/4\n- ระดับชั้นและแผนก: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
     }
