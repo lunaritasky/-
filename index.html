@@ -31,7 +31,7 @@
 
   <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10">
     
-    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้นที่ AI วิเคราะห์แบบแม่นยำ) -->
+    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้น) -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-cyan-400">📱 Student Tracker</h1>
@@ -84,9 +84,13 @@
       </div>
     </div>
 
-    <!-- 📅 ส่วนอัปเดตตารางเรียน (ระบบประมวลผลหักล้างชื่อชั้นและพยัญชนะวิชาแม่นยำ) -->
+    <!-- 📅 ส่วนอัปเดตตารางเรียน + ปุ่มลบตาราง -->
     <div class="p-3 bg-gray-750 rounded-xl border border-gray-700 space-y-2">
-      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI ประมวลผลระดับชั้นและพยัญชนะวิชา):</label>
+      <div class="flex justify-between items-center">
+        <label class="block text-xs font-semibold text-amber-400">📅 อัปเดตตารางเรียน:</label>
+        <button type="button" onclick="clearSchedule()" class="text-[10px] bg-red-600/80 hover:bg-red-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer">🗑️ ลบตารางออก</button>
+      </div>
+
       <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
       <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
@@ -108,7 +112,7 @@
 
       <div>
         <label class="block text-xs font-medium text-gray-300 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนและทำภารกิจวันนี้เรียบร้อย..."></textarea>
+        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนวิชาหลักเรียบร้อย..."></textarea>
       </div>
 
       <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 font-bold py-2.5 rounded-xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
@@ -167,7 +171,7 @@
     let currentSavings = parseFloat(localStorage.getItem('saved_money')) || 0;
     let targetAmount = parseFloat(localStorage.getItem('saved_target')) || 6000;
     let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อของ";
-    let studentClass = localStorage.getItem('student_class') || "ยังไม่อัปโหลดตาราง";
+    let studentClass = localStorage.getItem('student_class') || "";
     let savedBubbleImg = localStorage.getItem('bubble_photo');
     let savedScheduleName = localStorage.getItem('schedule_name');
 
@@ -181,7 +185,13 @@
       document.getElementById('goalTitleInput').value = goalTitle;
       document.getElementById('goalTargetInput').value = targetAmount;
       document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
-      document.getElementById('displayStudentClass').innerText = studentClass;
+      
+      if (studentClass) {
+        document.getElementById('displayStudentClass').innerText = studentClass;
+      } else {
+        document.getElementById('displayStudentClass').innerText = "ยังไม่ได้อัปโหลดตาราง";
+      }
+
       updateProgressUI();
 
       if (savedBubbleImg) {
@@ -221,7 +231,7 @@
       showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
     }
 
-    // 🧠 ระบบ AI หักล้างและประมวลผลระดับชั้น/แผนการเรียนจากชื่อไฟล์และตัวพยัญชนะวิชา
+    // 🧠 ระบบ AI ประมวลผลตารางเรียน
     document.getElementById('scheduleInput').addEventListener('change', function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -229,7 +239,6 @@
 
         let detectedResult = "";
 
-        // 1. ตรวจสอบแยกระดับชั้นหลัก (ม.4, ม.5, ม.6, ปวช., ปวส.) ก่อนเพื่อตัดปัญหาการทับซ้อน
         if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m4')) {
           detectedResult = "ม.4 วิทย์-คณิต";
         } else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m5')) {
@@ -244,9 +253,7 @@
           detectedResult = "ปวช.3 ช่างอิเล็กทรอนิกส์";
         } else if (fn.includes('ปวส')) {
           detectedResult = "ปวส. เทคโนโลยีอิเล็กทรอนิกส์";
-        } 
-        // 2. ถ้าไม่เจอชื่อชั้นชัดเจน ให้คัดแยกจากพยัญชนะไทยหน้ารหัสวิชา (เช่น ว=วิทยาศาสตร์, ค=คณิตศาสตร์)
-        else if (fn.includes('ว31') || fn.includes('ค31') || fn.includes('ว3') || fn.includes('ค3')) {
+        } else if (fn.includes('ว31') || fn.includes('ค31') || fn.includes('ว3') || fn.includes('ค3')) {
           detectedResult = "ม.4 วิทย์-คณิต";
         } else if (fn.includes('ว32') || fn.includes('ค32')) {
           detectedResult = "ม.5 วิทย์-คณิต";
@@ -267,6 +274,20 @@
         showModal(`🔍 AI หักล้างและวิเคราะห์รหัสวิชาจากตารางสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ผลการประมวลผล: ${studentClass}\n\n💡 ระบบอัปเดตข้อมูลระดับชั้นของคุณ ${userName} เรียบร้อยถาวรครับ!`);
       }
     });
+
+    // 🗑️ ฟังก์ชันลบ/เคลียร์ตารางเรียน
+    function clearSchedule() {
+      localStorage.removeItem('student_class');
+      localStorage.removeItem('schedule_name');
+      studentClass = "";
+      
+      document.getElementById('displayStudentClass').innerText = "ยังไม่ได้อัปโหลดตาราง";
+      document.getElementById('scheduleInput').value = "";
+      document.getElementById('scheduleStatus').innerText = "สถานะ: ยังไม่ได้อัปโหลดตารางเรียน";
+      document.getElementById('scheduleStatus').className = "text-[10px] text-gray-400 mt-1";
+
+      showModal(`🗑️ ลบข้อมูลตารางเรียนเรียบร้อยแล้วครับคุณ ${userName}!\n\nคุณสามารถอัปโหลดรูปตารางเรียนใหม่ได้ทันทีเลยครับ`);
+    }
 
     document.getElementById('bubbleImageInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
@@ -359,7 +380,7 @@
         encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้นและแผนการเรียน: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้นและแผนการเรียน: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
     }
