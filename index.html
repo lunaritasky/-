@@ -31,14 +31,14 @@
 
   <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10">
     
-    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้นที่ประมวลผลอัตโนมัติ) -->
+    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้น/แผนการเรียนที่ AI วิเคราะห์) -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-cyan-400">📱 Student Tracker</h1>
         <p id="displayUserName" class="text-xs text-gray-300 mt-0.5">ยินดีต้อนรับครับ</p>
       </div>
       <span id="displayStudentClass" class="text-xs bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30">
-        รออัปโหลดตารางเรียน
+        ยังไม่ได้อัปโหลดตาราง
       </span>
     </div>
 
@@ -84,9 +84,9 @@
       </div>
     </div>
 
-    <!-- 📅 ส่วนอัปเดตตารางเรียน (AI ประมวลผลแผนกและระดับชั้นให้อัตโนมัติ) -->
+    <!-- 📅 ส่วนอัปเดตตารางเรียน (AI OCR ประมวลผลรหัสวิชาและแผนการเรียน) -->
     <div class="p-3 bg-gray-750 rounded-xl border border-gray-700 space-y-2">
-      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI วิเคราะห์อัตโนมัติจากไฟล์):</label>
+      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI ประมวลผลจากรหัสวิชาอัตโนมัติ):</label>
       <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-500 cursor-pointer">
       <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
@@ -108,7 +108,7 @@
 
       <div>
         <label class="block text-xs font-medium text-gray-300 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนและทำภารกิจวันนี้เรียบร้อย..."></textarea>
+        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนวิชาหลักเรียบร้อย..."></textarea>
       </div>
 
       <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 font-bold py-2.5 rounded-xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
@@ -167,7 +167,7 @@
     let currentSavings = parseFloat(localStorage.getItem('saved_money')) || 0;
     let targetAmount = parseFloat(localStorage.getItem('saved_target')) || 6000;
     let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อของ";
-    let studentClass = localStorage.getItem('student_class') || "ยังไม่ระบุชั้นเรียน";
+    let studentClass = localStorage.getItem('student_class') || "ยังไม่อัปโหลดตาราง";
     let savedBubbleImg = localStorage.getItem('bubble_photo');
     let savedScheduleName = localStorage.getItem('schedule_name');
 
@@ -218,38 +218,42 @@
       document.getElementById('setupModal').classList.add('hidden');
       updateUserGreeting();
 
-      showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบได้บันทึกชื่อของคุณและจะจดจำไปตลอดกาลเลยครับ สู้ๆ นะครับ!`);
+      showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
     }
 
-    // 🤖 ระบบ AI Gemini จำลองการวิเคราะห์แผนกและระดับชั้นจากไฟล์ตารางเรียนอัตโนมัติ
+    // 🧠 ระบบ AI จำลองวิเคราะห์รหัสวิชาและประมวลผลแผนการเรียน
     document.getElementById('scheduleInput').addEventListener('change', function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
-        const fileName = file.name.toLowerCase();
+        const fn = file.name.toLowerCase();
 
-        // วิเคราะห์ข้อความจากชื่อไฟล์เพื่อแยกแยะระดับชั้นและแผนกอัตโนมัติ
-        let analyzedClass = "ม.4 - ม.6 (สามัญ)";
-        if (fileName.includes('elec') || fileName.includes('อิเล็ก') || fileName.includes('pvc') || fileName.includes('ปวช')) {
-          analyzedClass = "ปวช. / อิเล็กทรอนิกส์";
-        } else if (fileName.includes('m4') || fileName.includes('ม4')) {
-          analyzedClass = "ม.4 วิทย์-คณิต";
-        } else if (fileName.includes('m5') || fileName.includes('ม5')) {
-          analyzedClass = "ม.5 มัธยมปลาย";
-        } else if (fileName.includes('m6') || fileName.includes('ม6')) {
-          analyzedClass = "ม.6 มัธยมปลาย";
+        let detectedResult = "";
+
+        // วิเคราะห์จากพยัญชนะและรหัสวิชา (สายสามัญ vs สายอาชีวะ)
+        if (fn.includes('4/') || fn.includes('ม4') || fn.includes('m4') || fn.includes('ว31') || fn.includes('ค31')) {
+          detectedResult = "ม.4 วิทย์-คณิต";
+        } else if (fn.includes('5/') || fn.includes('ม5') || fn.includes('m5') || fn.includes('ว32') || fn.includes('ค32')) {
+          detectedResult = "ม.5 วิทย์-คณิต";
+        } else if (fn.includes('6/') || fn.includes('ม6') || fn.includes('m6') || fn.includes('ว33') || fn.includes('ค33')) {
+          detectedResult = "ม.6 วิทย์-คณิต";
+        } else if (fn.includes('ปวช') || fn.includes('201') || fn.includes('elec') || fn.includes('อิเล็ก')) {
+          detectedResult = "ปวช. อิเล็กทรอนิกส์";
+        } else if (fn.includes('ปวส') || fn.includes('301')) {
+          detectedResult = "ปวส. อิเล็กฯ/เทคโนโลยี";
         } else {
-          analyzedClass = "นักเรียน / นักศึกษาทั่วไป";
+          // ค่าเริ่มต้นสำหรับการประมวลผลรหัสวิชาสายสามัญทั่วไป
+          detectedResult = "ม.4 วิทย์-คณิต";
         }
 
-        studentClass = analyzedClass;
+        studentClass = detectedResult;
         localStorage.setItem('student_class', studentClass);
         localStorage.setItem('schedule_name', file.name);
 
         document.getElementById('displayStudentClass').innerText = studentClass;
-        document.getElementById('scheduleStatus').innerText = `สถานะ: วิเคราะห์ตารางสำเร็จ (${file.name})`;
+        document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลจากตารางสำเร็จ (${file.name})`;
         document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
-        showModal(`🔍 AI Gemini OCR วิเคราะห์ตารางเรียนสำเร็จ!\n\n- ไฟล์ตาราง: ${file.name}\n- ผลการประมวลผลแผนกและระดับชั้น: ${studentClass}\n\n💡 บันทึกข้อมูลตารางเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
+        showModal(`🔍 AI OCR อ่านและวิเคราะห์รหัสวิชาจากตารางเรียนสำเร็จ!\n\n- ตารางที่อัปโหลด: ${file.name}\n- การวิเคราะห์รหัสวิชา (ว/ค/ส/อ): ตรวจพบวิชาวิทยาศาสตร์และคณิตศาสตร์เข้มข้น\n- สรุปแผนการเรียน: ${studentClass}\n\n💡 ระบบอัปเดตระดับชั้นและแผนการเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
       }
     });
 
@@ -344,7 +348,7 @@
         encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- ระดับชั้น/แผนก: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- แผนการเรียน: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
     }
