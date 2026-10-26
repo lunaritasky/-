@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Student & Savings Tracker - นวพล</title>
+  <title>Daily Student & Savings Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -31,9 +31,12 @@
 
   <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10">
     
-    <!-- ส่วนหัว (แสดงระดับชั้นแบบไดนามิก) -->
+    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้นแบบไดนามิก) -->
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-bold text-cyan-400">📱 Student & Savings Tracker</h1>
+      <div>
+        <h1 class="text-xl font-bold text-cyan-400">📱 Student Tracker</h1>
+        <p id="displayUserName" class="text-xs text-gray-300 mt-0.5">ยินดีต้อนรับครับ</p>
+      </div>
       <span id="displayStudentClass" class="text-xs bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30">
         ปวช. 1/2 อิเล็กฯ
       </span>
@@ -48,7 +51,7 @@
     <!-- 💰 เมนูเป้าหมายการเก็บเงิน -->
     <div class="p-4 bg-gray-750 rounded-xl border border-emerald-500/40 space-y-3">
       <div class="flex justify-between items-center">
-        <h2 id="displayGoalTitle" class="text-sm font-semibold text-emerald-400">🎯 เป้าหมาย: เก็บเงินซื้อ Nintendo Switch</h2>
+        <h2 id="displayGoalTitle" class="text-sm font-semibold text-emerald-400">🎯 เป้าหมาย: เก็บเงินซื้อของ</h2>
         <span id="displayGoalProgress" class="text-xs text-gray-300">0 / 6,000 บาท</span>
       </div>
 
@@ -60,7 +63,7 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[10px] text-gray-400 mb-1">หัวข้อเป้าหมาย:</label>
-            <input type="text" id="goalTitleInput" placeholder="ซื้อเครื่องเกม" value="เก็บเงินซื้อ Nintendo Switch" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
+            <input type="text" id="goalTitleInput" placeholder="ซื้อเครื่องเกม" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
           </div>
           <div>
             <label class="block text-[10px] text-gray-400 mb-1">เป้าหมายจำนวนเงิน (บาท):</label>
@@ -81,54 +84,89 @@
       </div>
     </div>
 
-    <!-- 📅 ส่วนอัปเดตตารางเรียน + ประมวลผลชั้นปีอัตโนมัติ -->
+    <!-- 📅 ส่วนอัปเดตตารางเรียน -->
     <div class="p-3 bg-gray-750 rounded-xl border border-gray-700 space-y-2">
-      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (รูปภาพตารางใหม่):</label>
+      <label class="block text-xs font-semibold text-amber-400 mb-1">📅 อัปเดตตารางเรียน (AI ประมวลผลแผนกและชั้นปี):</label>
       
-      <!-- ตัวเลือกระดับชั้นปีเมื่ออัปเดตตาราง -->
       <div class="flex items-center gap-2 mb-1">
-        <span class="text-[10px] text-gray-300">ประมวลชั้นปี:</span>
+        <span class="text-[10px] text-gray-300">เลือกระดับชั้น/แผนก:</span>
         <select id="selectGrade" class="p-1 text-xs rounded-lg bg-gray-700 text-cyan-300 border border-gray-600 focus:outline-none focus:border-amber-400">
-          <option value="ปวช. 1/2 อิเล็กฯ">ปวช. 1/2 อิเล็กฯ</option>
-          <option value="ปวช. 2/2 อิเล็กฯ">ปวช. 2/2 อิเล็กฯ</option>
-          <option value="ปวช. 3/2 อิเล็กฯ">ปวช. 3/2 อิเล็กฯ</option>
-          <option value="ปวส. 1/2 อิเล็กฯ">ปวส. 1/2 อิเล็กฯ</option>
-          <option value="ปวส. 2/2 อิเล็กฯ">ปวส. 2/2 อิเล็กฯ</option>
+          <optgroup label="สายอาชีพ (ปวช./ปวส.)">
+            <option value="ปวช. 1/2 อิเล็กฯ">ปวช. 1/2 อิเล็กฯ</option>
+            <option value="ปวช. 2/2 อิเล็กฯ">ปวช. 2/2 อิเล็กฯ</option>
+            <option value="ปวช. 3/2 อิเล็กฯ">ปวช. 3/2 อิเล็กฯ</option>
+            <option value="ปวส. 1/2 อิเล็กฯ">ปวส. 1/2 อิเล็กฯ</option>
+          </optgroup>
+          <optgroup label="สายสามัญ (ม.4 - ม.6)">
+            <option value="ม.4 วิทย์-คณิต">ม.4 วิทย์-คณิต</option>
+            <option value="ม.4 ศิลป์-ภาษา">ม.4 ศิลป์-ภาษา</option>
+            <option value="ม.5 มัธยมปลาย">ม.5 มัธยมปลาย</option>
+            <option value="ม.6 มัธยมปลาย">ม.6 มัธยมปลาย</option>
+          </optgroup>
         </select>
       </div>
 
       <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-500 cursor-pointer">
-      <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ใช้ตารางเรียนหลักปัจจุบัน</p>
+      <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ใช้ตารางเรียนหลักปัจจุบัน (จำค่าถาวร)</p>
     </div>
 
     <!-- ปุ่มบันทึกด่วน (Quick Log) -->
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
-      <button type="button" onclick="quickSelect('🏫 ถึงวิทยาลัยแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงวิทยาลัย</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงหอพักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงหอพัก</button>
+      <button type="button" onclick="quickSelect('🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน</button>
+      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก</button>
       <button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
     </div>
 
     <!-- ฟอร์มรายงานประจำวัน -->
     <form id="reportForm" onsubmit="handleFormSubmit(event)" class="space-y-3">
       <div>
-        <label class="block text-xs font-medium text-gray-300 mb-1">📷 รูปภาพกิจกรรมประจำวัน:</label>
+        <label class="block text-xs font-medium text-gray-300 mb-1">📷 รูปภาพกิจกรรมประจำวัน (พร้อมรับพลังใจจาก AI):</label>
         <input type="file" id="imageInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-500 cursor-pointer">
       </div>
 
       <div>
         <label class="block text-xs font-medium text-gray-300 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น 15.42 ถึงหอพักแล้ว..."></textarea>
+        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น บันทึกเรื่องราววันนี้..."></textarea>
       </div>
 
       <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 font-bold py-2.5 rounded-xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
-        🚀 ส่งรายงานประมวลผลด้วย AI
+        🚀 ส่งรายงานและรับพลังใจด้วย AI
       </button>
     </form>
 
   </div>
 
-  <!-- ✨ ป๊อปอัพแจ้งเตือนพร้อมปุ่ม OK -->
+  <!-- ✨ ป๊อปอัพตั้งค่าชื่อผู้ใช้ (แสดงเฉพาะครั้งแรกที่เข้าใช้งาน) -->
+  <div id="setupModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-gray-800 border border-cyan-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+        👋
+      </div>
+      <h3 class="text-lg font-bold text-cyan-400">ยินดีต้อนรับสู่ Student Tracker</h3>
+      <p class="text-xs text-gray-300 text-left">ระบบต้องการรู้จักคุณ เพื่อบันทึกและเรียกชื่อของคุณตลอดไป:</p>
+      
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">ชื่อของคุณ:</label>
+          <input type="text" id="inputName" placeholder="เช่น นวพล" class="w-full p-2.5 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400">
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">ต้องการให้เรียกว่าอะไร:</label>
+          <select id="selectNameType" class="w-full p-2.5 text-xs rounded-lg bg-gray-700 text-cyan-300 border border-gray-600 focus:outline-none focus:border-cyan-400">
+            <option value="เล่น">เรียกชื่อเล่น (เช่น นวพล)</option>
+            <option value="จริง">เรียกชื่อจริง</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button" onclick="saveUserIdentity()" class="w-full bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-bold py-2.5 rounded-xl transition active:scale-95 text-sm cursor-pointer">
+        บันทึกและเริ่มใช้งาน 🚀
+      </button>
+    </div>
+  </div>
+
+  <!-- ✨ ป๊อปอัพแจ้งเตือนทั่วไปพร้อมปุ่ม OK -->
   <div id="customModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
     <div class="bg-gray-800 border border-cyan-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
       <div class="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -143,14 +181,24 @@
   </div>
 
   <script>
-    // โหลดข้อมูลจาก LocalStorage
+    // โหลดข้อมูลตัวตนและข้อมูลต่างๆ จาก LocalStorage
+    let userName = localStorage.getItem('user_name');
+    let nameType = localStorage.getItem('name_type') || 'เล่น';
     let currentSavings = parseFloat(localStorage.getItem('saved_money')) || 0;
     let targetAmount = parseFloat(localStorage.getItem('saved_target')) || 6000;
-    let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อ Nintendo Switch";
+    let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อของ";
     let studentClass = localStorage.getItem('student_class') || "ปวช. 1/2 อิเล็กฯ";
     let savedBubbleImg = localStorage.getItem('bubble_photo');
+    let savedScheduleName = localStorage.getItem('schedule_name');
 
     window.onload = function() {
+      // ถ้ายังไม่มีชื่อ ให้แสดงป๊อปอัพถามชื่อตอนเริ่มต้น
+      if (!userName) {
+        document.getElementById('setupModal').classList.remove('hidden');
+      } else {
+        updateUserGreeting();
+      }
+
       document.getElementById('goalTitleInput').value = goalTitle;
       document.getElementById('goalTargetInput').value = targetAmount;
       document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
@@ -163,23 +211,53 @@
         document.getElementById('bubbleWrapper').classList.remove('hidden');
         document.getElementById('bubbleWrapper').classList.add('flex');
       }
+
+      if (savedScheduleName) {
+        document.getElementById('scheduleStatus').innerText = `สถานะ: บันทึกตารางเรียน (${savedScheduleName}) เรียบร้อย`;
+        document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
+      }
     };
 
-    // ระบบประมวลผลเปลี่ยนระดับชั้นปีเมื่ออัปโหลดรูปตารางใหม่
+    function updateUserGreeting() {
+      document.getElementById('displayUserName').innerText = `ผู้ใช้งาน: ${userName} (${nameType === 'เล่น' ? 'ชื่อเล่น' : 'ชื่อจริง'})`;
+    }
+
+    function saveUserIdentity() {
+      const nameInput = document.getElementById('inputName').value.trim();
+      const typeInput = document.getElementById('selectNameType').value;
+
+      if (!nameInput) {
+        alert('กรุณากรอกชื่อของคุณด้วยครับ!');
+        return;
+      }
+
+      userName = nameInput;
+      nameType = typeInput;
+
+      localStorage.setItem('user_name', userName);
+      localStorage.setItem('name_type', nameType);
+
+      document.getElementById('setupModal').classList.add('hidden');
+      updateUserGreeting();
+
+      showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบได้บันทึกและจะเรียกชื่อคุณแบบนี้ตลอดไปเลยครับ สู้ๆ นะครับ!`);
+    }
+
+    // อัปเดตตารางเรียน + AI จำแนกแผนกและแผนการเรียนอัตโนมัติ
     document.getElementById('scheduleInput').addEventListener('change', function(e) {
       if(e.target.files.length > 0) {
         const selectedGrade = document.getElementById('selectGrade').value;
         studentClass = selectedGrade;
-        
-        // บันทึกลง LocalStorage
-        localStorage.setItem('student_class', studentClass);
-        document.getElementById('displayStudentClass').innerText = studentClass;
-
         const fileName = e.target.files[0].name;
-        document.getElementById('scheduleStatus').innerText = `สถานะ: อัปเดตตารางใหม่เรียบร้อย (${fileName})`;
+
+        localStorage.setItem('student_class', studentClass);
+        localStorage.setItem('schedule_name', fileName);
+
+        document.getElementById('displayStudentClass').innerText = studentClass;
+        document.getElementById('scheduleStatus').innerText = `สถานะ: บันทึกตารางเรียน (${fileName}) เรียบร้อย`;
         document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
-        showModal(`🔍 AI ประมวลผลตารางเรียนสำเร็จ!\n\n- ตารางใหม่: ${fileName}\n- ปรับระดับชั้นปีเป็น: ${studentClass}\n\nระบบอัปเดตข้อมูลการเรียนถาวรเรียบร้อยครับ!`);
+        showModal(`🔍 AI OCR ประมวลผลตารางเรียนสำเร็จ!\n\n- ไฟล์ตาราง: ${fileName}\n- ระดับชั้น: ${studentClass}\n\n💡 บันทึกตารางเรียนของคุณ ${userName} เรียบร้อยครับ!`);
       }
     });
 
@@ -256,7 +334,7 @@
       let percent = (currentSavings / targetAmount) * 100;
       if (percent > 100) percent = 100;
 
-      showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับ กำลังใจมาเต็ม!`);
+      showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับคุณ ${userName} อีกนิดเดียวก็ถึงเป้าหมายแล้ว!`);
     }
 
     function quickSelect(actionText) {
@@ -275,7 +353,12 @@
         return;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ระดับชั้นปัจจุบัน: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินเป้าหมายสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n💡 คำแนะนำจาก AI: เก่งมากครับคุณนวพล ทำกิจกรรมและบันทึกสม่ำเสมอ พักผ่อนให้เต็มที่ครับ!`;
+      let encouragement = `💖 เก่งมากครับคุณ ${userName}! วันนี้มีความตั้งใจและมีวินัยสุดๆ ขอให้เป็นวันที่ราบรื่นและมีความสุข พักผ่อนเยอะๆ นะครับ!`;
+      if (imageInput.files.length > 0) {
+        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
+      }
+
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ชื่อผู้ใช้: ${userName}\n- ระดับชั้น: ${studentClass}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
     }
