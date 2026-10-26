@@ -1,701 +1,1000 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Student & Savings Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <style>
-    /* 📱 การตั้งค่าการเลื่อนหน้าจอสำหรับ iPad / Safari / Mobile */
-    html, body {
-      font-family: 'Prompt', sans-serif;
-      height: 100%;
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch;
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    /* 🫧 แอนิเมชันฟองสบู่ลอยฮีลใจ */
-    @keyframes fastFloatAndFade {
-      0% { transform: translateY(0px) scale(0.6) rotate(0deg); opacity: 0; }
-      20% { opacity: 0.95; transform: translateY(-40px) scale(1.1) rotate(5deg); }
-      80% { opacity: 0.95; transform: translateY(-260px) scale(1) rotate(-5deg); }
-      100% { transform: translateY(-340px) scale(0.8) rotate(10deg); opacity: 0; }
-    }
-
-    .bubble-burst {
-      animation: fastFloatAndFade 2.6s cubic-bezier(0.25, 1, 0.5, 1) infinite;
-    }
-
-    /* Custom Custom Theme Wallpaper background overlay */
-    .custom-bg-cover {
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-    }
-  </style>
-</head>
-<body id="appBody" class="bg-gray-900 text-white min-h-screen p-3 sm:p-5 flex flex-col items-center justify-start relative transition-all duration-300">
-
-  <!-- 🫧 พื้นที่สุ่มสร้างฟองสบู่ลอยเร็วๆ วนลูปต่อเนื่อง -->
-  <div id="floatingBubblesContainer" class="fixed inset-0 pointer-events-none z-40 overflow-hidden hidden"></div>
-
-  <!-- 🔝 Top Bar / Header Buttons -->
-  <div class="w-full max-w-md flex items-center justify-between mb-3 z-30">
-    <div class="flex items-center space-x-2">
-      <span class="text-xl">✨</span>
-      <span id="topTitle" class="text-xs font-bold tracking-wider uppercase opacity-90">Student Tracker</span>
-    </div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Daily Student & Savings Tracker (iPad Native Landscape)</title>
     
-    <div class="flex items-center space-x-2">
-      <!-- ปุ่มรีเฟรชหน้าจอ -->
-      <button type="button" onclick="refreshApp()" class="flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 transition active:scale-95 cursor-pointer shadow-sm">
-        <span id="refreshIcon" class="inline-block transition-transform duration-500">🔄</span>
-        <span>รีเฟรช</span>
-      </button>
-
-      <!-- ปุ่มเปิดเมนูตั้งค่าธีม & UI -->
-      <button type="button" onclick="openThemeSettingsModal()" class="flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 transition active:scale-95 cursor-pointer shadow-sm">
-        <span>⚙️</span>
-        <span>ตั้งค่าธีม</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- 📦 Main Container -->
-  <div id="mainCard" class="w-full max-w-md rounded-3xl p-5 shadow-2xl border transition-all duration-300 space-y-4 relative z-10 my-auto bg-gray-800/90 border-gray-700 backdrop-blur-md">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- ส่วนหัว (แสดงชื่อผู้ใช้ และข้อมูลห้องเรียน) -->
-    <div class="flex items-start justify-between border-b pb-3 border-white/10">
-      <div>
-        <h1 id="headerAppName" class="text-lg font-bold tracking-tight">📱 Student Tracker</h1>
-        <p id="displayUserName" class="text-xs opacity-80 mt-0.5">ยินดีต้อนรับครับ</p>
-      </div>
-      <div class="text-right space-y-1">
-        <span id="displayStudentClass" class="inline-block text-[11px] px-2.5 py-0.5 rounded-full font-semibold border bg-white/10 border-white/20">
-          ยังไม่ได้อัปโหลดตาราง
-        </span>
-        <div id="displayStudentRoom" class="text-[10px] opacity-75 font-medium hidden">
-          📍 ห้องเรียน: -
-        </div>
-      </div>
-    </div>
-
-    <!-- 🫧 เมนูตั้งค่ารูปฟองสบู่กำลังใจ -->
-    <div id="bubbleCard" class="p-3.5 rounded-2xl border bg-black/20 border-white/10 space-y-2">
-      <div class="flex items-center justify-between">
-        <label class="block text-xs font-semibold opacity-90">🫧 ตั้งค่ารูปฟองสบู่ฮีลใจ (รูปแฟน/คนสำคัญ):</label>
-        <span class="text-[10px] opacity-60">ลอยพร้อมข้อความน่ารัก</span>
-      </div>
-      <input type="file" id="bubbleImageInput" accept="image/*" class="w-full text-xs opacity-90 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/20 file:text-white hover:file:bg-white/30 cursor-pointer">
-    </div>
-
-    <!-- 💰 เมนูเป้าหมายการเก็บเงิน -->
-    <div id="savingsCard" class="p-4 rounded-2xl border bg-black/20 border-white/10 space-y-3">
-      <div class="flex justify-between items-center">
-        <h2 id="displayGoalTitle" class="text-xs font-bold tracking-wide">🎯 เป้าหมาย: เก็บเงินซื้อของ</h2>
-        <span id="displayGoalProgress" class="text-xs font-medium opacity-90">0 / 6,000 บาท</span>
-      </div>
-
-      <!-- Progress Bar -->
-      <div class="w-full bg-black/40 rounded-full h-3 overflow-hidden p-0.5 border border-white/10">
-        <div id="progressBar" class="h-full rounded-full transition-all duration-500 bg-emerald-400" style="width: 0%"></div>
-      </div>
-
-      <div class="space-y-2.5 pt-2 border-t border-white/10">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[10px] opacity-70 mb-1">หัวข้อเป้าหมาย:</label>
-            <input type="text" id="goalTitleInput" placeholder="ซื้อไอแพด" class="w-full p-2 text-xs rounded-xl bg-black/30 border border-white/15 focus:outline-none focus:border-white/40">
-          </div>
-          <div>
-            <label class="block text-[10px] opacity-70 mb-1">จำนวนเงินเป้าหมาย (บาท):</label>
-            <input type="number" id="goalTargetInput" value="6000" class="w-full p-2 text-xs rounded-xl bg-black/30 border border-white/15 focus:outline-none focus:border-white/40">
-          </div>
-        </div>
-
-        <button type="button" onclick="saveGoalSettings()" class="w-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold py-2 rounded-xl border border-white/20 transition active:scale-95 cursor-pointer shadow-sm">
-          💾 บันทึกตั้งค่าเป้าหมายใหม่
-        </button>
-
-        <div class="flex gap-2 pt-1 border-t border-white/10">
-          <input type="number" id="addMoneyInput" placeholder="+ จำนวนเงินที่เก็บเพิ่ม" class="w-full p-2 text-xs rounded-xl bg-black/30 border border-white/15 focus:outline-none focus:border-white/40">
-          <button type="button" onclick="addSavings()" id="btnSaveMoney" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition active:scale-95 whitespace-nowrap cursor-pointer shadow-sm">
-            ➕ ฝากเงิน
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 📅 ส่วนอัปเดตตารางเรียน + แยกห้องเรียน AI OCR -->
-    <div id="scheduleCard" class="p-3.5 rounded-2xl border bg-black/20 border-white/10 space-y-2">
-      <div class="flex justify-between items-center">
-        <label class="block text-xs font-semibold opacity-90">📅 ตารางเรียน AI OCR (วิเคราะห์สายวิชา & แยกห้องเรียน):</label>
-        <button type="button" onclick="clearSchedule()" class="text-[10px] bg-red-600/80 hover:bg-red-500 text-white px-2 py-0.5 rounded-lg transition active:scale-95 cursor-pointer shadow-sm">🗑️ ลบตาราง</button>
-      </div>
-
-      <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs opacity-90 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/20 file:text-white hover:file:bg-white/30 cursor-pointer">
-      <p id="scheduleStatus" class="text-[10px] opacity-70 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
-    </div>
-
-    <!-- ปุ่มบันทึกด่วน (Quick Log) -->
-    <div class="grid grid-cols-2 gap-2">
-      <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้าสดใส')" class="bg-blue-600/80 hover:bg-blue-500 text-white text-xs font-medium py-2 rounded-xl border border-white/10 transition active:scale-95 cursor-pointer shadow-sm">🌅 ตื่นนอน</button>
-      <button type="button" onclick="quickSelect('🏫 ถึงสถานศึกษา/เรียนหนังสือแล้ว')" class="bg-emerald-600/80 hover:bg-emerald-500 text-white text-xs font-medium py-2 rounded-xl border border-white/10 transition active:scale-95 cursor-pointer shadow-sm">🏫 ถึงสถาบัน</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงบ้าน/ที่พักปลอดภัย')" class="bg-purple-600/80 hover:bg-purple-500 text-white text-xs font-medium py-2 rounded-xl border border-white/10 transition active:scale-95 cursor-pointer shadow-sm">🏠 ถึงที่พัก</button>
-      <button type="button" onclick="quickSelect('🌙 เข้านอนพักผ่อนเตรียมลุยต่อ')" class="bg-indigo-600/80 hover:bg-indigo-500 text-white text-xs font-medium py-2 rounded-xl border border-white/10 transition active:scale-95 cursor-pointer shadow-sm">🌙 เข้านอน</button>
-    </div>
-
-    <!-- ฟอร์มรายงานประจำวัน -->
-    <form id="reportForm" onsubmit="handleFormSubmit(event)" class="space-y-3">
-      <div>
-        <label class="block text-xs font-medium opacity-90 mb-1">📷 รูปกิจกรรมวันนี้ (พร้อมรับพลังใจ AI):</label>
-        <input type="file" id="imageInput" accept="image/*" class="w-full text-xs opacity-90 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/20 file:text-white hover:file:bg-white/30 cursor-pointer">
-      </div>
-
-      <div>
-        <label class="block text-xs font-medium opacity-90 mb-1">✍️ บันทึกความรู้สึก/เหตุการณ์ประจำวัน:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-xs rounded-xl bg-black/30 border border-white/15 focus:outline-none focus:border-white/40 placeholder-white/40" placeholder="เช่น ตั้งใจเรียนคาบเช้า ออมเงินเรียบร้อย..."></textarea>
-      </div>
-
-      <button type="submit" id="btnSubmitReport" class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-2.5 rounded-xl border border-white/30 transition shadow-lg active:scale-95 text-xs cursor-pointer">
-        🚀 ส่งรายงานและรับพลังใจด้วย AI
-      </button>
-    </form>
-
-  </div>
-
-  <!-- ⚙️ Modal ปรับแต่งธีม & สีสัน (Theme & Customization UI Modal) -->
-  <div id="themeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-50 overflow-y-auto">
-    <div class="bg-gray-800 border border-white/20 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-4 my-auto">
-      <div class="flex items-center justify-between border-b border-white/10 pb-2">
-        <h3 class="text-sm font-bold flex items-center gap-1.5">
-          <span>⚙️</span>
-          <span>ตั้งค่าธีม & รูปแบบ UI</span>
-        </h3>
-        <button type="button" onclick="closeThemeSettingsModal()" class="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded-lg">✕ ปิด</button>
-      </div>
-
-      <!-- สไตล์ธีม -->
-      <div class="space-y-1.5">
-        <label class="block text-xs font-semibold opacity-90">🎨 สไตล์ธีม (Theme Style):</label>
-        <select id="themeStyleSelect" onchange="changeThemeStyle(this.value)" class="w-full p-2 text-xs rounded-xl bg-black/40 border border-white/20 focus:outline-none text-white">
-          <option value="cute">💖 ธีมน่ารัก (Cute Pastel)</option>
-          <option value="minimal">💼 ธีมธรรมดา (Clean Minimal)</option>
-          <option value="custom">🖼️ ธีมกำหนดเอง (Custom BG)</option>
-        </select>
-      </div>
-
-      <!-- พาเลตสี (8 สี) -->
-      <div class="space-y-1.5">
-        <label class="block text-xs font-semibold opacity-90">🌈 เลือกโทนสีแอป (8 เฉดสี):</label>
-        <div class="grid grid-cols-4 gap-2">
-          <button type="button" onclick="setColorPalette('sakura')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-pink-500/30 border border-pink-400/50 hover:scale-105 transition">🌸 ชมพู</button>
-          <button type="button" onclick="setColorPalette('cyan')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-cyan-500/30 border border-cyan-400/50 hover:scale-105 transition">🩵 ฟ้าเนออน</button>
-          <button type="button" onclick="setColorPalette('emerald')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-emerald-500/30 border border-emerald-400/50 hover:scale-105 transition">🌿 มินต์</button>
-          <button type="button" onclick="setColorPalette('lavender')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-purple-500/30 border border-purple-400/50 hover:scale-105 transition">🪻 ม่วง</button>
-          <button type="button" onclick="setColorPalette('peach')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-amber-500/30 border border-amber-400/50 hover:scale-105 transition">🍑 พีช</button>
-          <button type="button" onclick="setColorPalette('charcoal')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-gray-700/60 border border-gray-500/50 hover:scale-105 transition">🖤 ดาร์ก</button>
-          <button type="button" onclick="setColorPalette('rosegold')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-rose-400/30 border border-rose-300/50 hover:scale-105 transition">🌹 โรสโกลด์</button>
-          <button type="button" onclick="setColorPalette('coral')" class="p-2 rounded-xl text-[10px] font-bold text-center bg-orange-500/30 border border-orange-400/50 hover:scale-105 transition">🌅 คอรัล</button>
-        </div>
-      </div>
-
-      <!-- อัปโหลดภาพพื้นหลังส่วนตัว -->
-      <div id="customBgSection" class="space-y-1.5 p-3 bg-black/20 rounded-2xl border border-white/10 hidden">
-        <label class="block text-xs font-semibold opacity-90">🖼️ อัปโหลดภาพพื้นหลังส่วนตัว (Wallpaper):</label>
-        <input type="file" id="customBgInput" accept="image/*" class="w-full text-xs opacity-90 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/20 file:text-white cursor-pointer">
-        <button type="button" onclick="removeCustomBg()" class="text-[10px] text-red-400 hover:underline pt-1">🗑️ ลบรูปพื้นหลังออก</button>
-      </div>
-
-      <button type="button" onclick="closeThemeSettingsModal()" class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-2 rounded-xl border border-white/20 transition text-xs active:scale-95">
-        เสร็จสิ้น 👍
-      </button>
-    </div>
-  </div>
-
-  <!-- ✨ ป๊อปอัพแรกเข้า ตั้งค่าชื่อผู้ใช้ -->
-  <div id="setupModal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-gray-800 border border-white/20 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
-      <div class="w-12 h-12 bg-white/10 text-white rounded-2xl flex items-center justify-center mx-auto text-xl font-bold border border-white/20">
-        👋
-      </div>
-      <h3 class="text-base font-bold">ยินดีต้อนรับสู่ Student Tracker</h3>
-      <p class="text-xs opacity-80 text-left">กรุณากรอกชื่อของคุณ เพื่อให้ระบบบันทึกไว้ทักทายคุณถาวร:</p>
-      
-      <div class="space-y-3 text-left">
-        <div>
-          <label class="block text-[11px] opacity-70 mb-1">ชื่อของคุณ:</label>
-          <input type="text" id="inputName" placeholder="เช่น นวพล" class="w-full p-2.5 text-xs rounded-xl bg-black/30 border border-white/20 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-[11px] opacity-70 mb-1">รูปแบบชื่อที่ต้องการให้ระบบเรียก:</label>
-          <select id="selectNameType" class="w-full p-2.5 text-xs rounded-xl bg-black/30 border border-white/20 focus:outline-none">
-            <option value="เล่น">เรียกชื่อเล่น</option>
-            <option value="จริง">เรียกชื่อจริง</option>
-          </select>
-        </div>
-      </div>
-
-      <button type="button" onclick="saveUserIdentity()" class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-2.5 rounded-xl border border-white/20 transition active:scale-95 text-xs">
-        บันทึกและเริ่มใช้งาน 🚀
-      </button>
-    </div>
-  </div>
-
-  <!-- ✨ ป๊อปอัพแจ้งเตือนผลการทำงาน (Custom Alert Modal) -->
-  <div id="customModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-gray-800 border border-white/20 rounded-3xl p-5 max-w-sm w-full shadow-2xl text-center space-y-3.5 my-auto">
-      <div class="w-11 h-11 bg-white/10 text-white rounded-2xl flex items-center justify-center mx-auto text-lg font-bold border border-white/20">
-        🤖
-      </div>
-      <h3 class="text-sm font-bold">ผลการประมวลผลจากระบบ AI</h3>
-      <p id="modalMessage" class="text-xs opacity-90 leading-relaxed whitespace-pre-line text-left bg-black/40 p-3 rounded-2xl border border-white/10 max-h-60 overflow-y-auto"></p>
-      <button type="button" onclick="closeModal()" class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-2 rounded-xl border border-white/20 transition active:scale-95 text-xs cursor-pointer">
-        รับทราบ 👍
-      </button>
-    </div>
-  </div>
-
-  <script>
-    // 💾 State & LocalStorage Variables
-    let userName = localStorage.getItem('user_name');
-    let nameType = localStorage.getItem('name_type') || 'เล่น';
-    let currentSavings = parseFloat(localStorage.getItem('saved_money')) || 0;
-    let targetAmount = parseFloat(localStorage.getItem('saved_target')) || 6000;
-    let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อของ";
-    let studentClass = localStorage.getItem('student_class') || "";
-    let studentRoom = localStorage.getItem('student_room') || "";
-    let savedBubbleImg = localStorage.getItem('bubble_photo');
-    let savedScheduleName = localStorage.getItem('schedule_name');
-    let activeThemeStyle = localStorage.getItem('theme_style') || 'cute';
-    let activeColorPalette = localStorage.getItem('color_palette') || 'sakura';
-    let customBgPhoto = localStorage.getItem('custom_bg_photo');
-
-    // 💖 ประโยคฮีลใจน่ารักๆ บนฟองสบู่
-    const encouragementPhrases = [
-      "🐰✨ วันนี้เก่งมากๆ แล้วน้า ยิ้มกว้างๆ ลุยต่อเลย!",
-      "🧸💖 คนเก่งของระบบสู้ๆ ขอให้วันนี้มีแต่เรื่องชวนยิ้ม!",
-      "🌟🚀 ทุกความพยายามมีความหมาย เธอทำได้แน่นอน!",
-      "🌸💫 ส่งพลังบวกให้รัวๆ พักผ่อนเยอะๆ ด้วยนะ!",
-      "🎉💖 เก่งที่สุดในสามโลก ลุยไปด้วยกันเล้ย!",
-      "🍀✨ วันนี้ต้องเป็นวันของเรา สู้ตายค่า/ครับ!",
-      "🐱💕 เหนื่อยก็พัก เติมกำลังใจให้ตัวเองน้า คนเก่ง!",
-      "🦄✨ ส่งยิ้มหวานๆ ให้ตัวเองทีนึง คนเก่งสู้ๆ!"
-    ];
-
-    // 🎨 สีและชุดรูปแบบ (8 Color Palettes configuration)
-    const palettes = {
-      sakura: { bg: "bg-pink-950", card: "bg-pink-900/80 border-pink-500/30", text: "text-pink-300", btn: "bg-pink-600 hover:bg-pink-500", bar: "bg-pink-400" },
-      cyan: { bg: "bg-slate-950", card: "bg-cyan-950/80 border-cyan-500/30", text: "text-cyan-300", btn: "bg-cyan-600 hover:bg-cyan-500", bar: "bg-cyan-400" },
-      emerald: { bg: "bg-emerald-950", card: "bg-emerald-900/80 border-emerald-500/30", text: "text-emerald-300", btn: "bg-emerald-600 hover:bg-emerald-500", bar: "bg-emerald-400" },
-      lavender: { bg: "bg-purple-950", card: "bg-purple-900/80 border-purple-500/30", text: "text-purple-300", btn: "bg-purple-600 hover:bg-purple-500", bar: "bg-purple-400" },
-      peach: { bg: "bg-amber-950", card: "bg-amber-900/80 border-amber-500/30", text: "text-amber-300", btn: "bg-amber-600 hover:bg-amber-500", bar: "bg-amber-400" },
-      charcoal: { bg: "bg-gray-950", card: "bg-gray-800/90 border-gray-600/40", text: "text-gray-200", btn: "bg-gray-700 hover:bg-gray-600", bar: "bg-gray-300" },
-      rosegold: { bg: "bg-stone-950", card: "bg-rose-950/70 border-rose-400/30", text: "text-rose-200", btn: "bg-rose-600 hover:bg-rose-500", bar: "bg-rose-300" },
-      coral: { bg: "bg-orange-950", card: "bg-orange-900/80 border-orange-500/30", text: "text-orange-300", btn: "bg-orange-600 hover:bg-orange-500", bar: "bg-orange-400" }
-    };
-
-    window.onload = function() {
-      if (!userName) {
-        document.getElementById('setupModal').classList.remove('hidden');
-      } else {
-        updateUserGreeting();
-      }
-
-      document.getElementById('goalTitleInput').value = goalTitle;
-      document.getElementById('goalTargetInput').value = targetAmount;
-      document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
-      
-      updateClassAndRoomUI();
-      updateProgressUI();
-      applyThemeAndPalette();
-
-      if (savedBubbleImg) {
-        setupFloatingBubbles();
-      }
-
-      if (savedScheduleName) {
-        document.getElementById('scheduleStatus').innerText = `สถานะ: บันทึกตารางเรียน (${savedScheduleName}) เรียบร้อย`;
-        document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1 font-medium";
-      }
-    };
-
-    function updateUserGreeting() {
-      document.getElementById('displayUserName').innerText = `ผู้ใช้งาน: ${userName} (${nameType === 'เล่น' ? 'ชื่อเล่น' : 'ชื่อจริง'})`;
-    }
-
-    function updateClassAndRoomUI() {
-      if (studentClass) {
-        document.getElementById('displayStudentClass').innerText = studentClass;
-      } else {
-        document.getElementById('displayStudentClass').innerText = "ยังไม่ได้อัปโหลดตาราง";
-      }
-
-      if (studentRoom) {
-        document.getElementById('displayStudentRoom').innerText = `📍 ห้องเรียน/กลุ่ม: ${studentRoom}`;
-        document.getElementById('displayStudentRoom').classList.remove('hidden');
-      } else {
-        document.getElementById('displayStudentRoom').classList.add('hidden');
-      }
-    }
-
-    function saveUserIdentity() {
-      const nameInput = document.getElementById('inputName').value.trim();
-      const typeInput = document.getElementById('selectNameType').value;
-
-      if (!nameInput) {
-        alert('กรุณากรอกชื่อของคุณด้วยครับ!');
-        return;
-      }
-
-      userName = nameInput;
-      nameType = typeInput;
-
-      localStorage.setItem('user_name', userName);
-      localStorage.setItem('name_type', nameType);
-
-      document.getElementById('setupModal').classList.add('hidden');
-      updateUserGreeting();
-
-      showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
-    }
-
-    /* 🔄 ปุ่มรีเฟรชระบบ */
-    function refreshApp() {
-      const icon = document.getElementById('refreshIcon');
-      icon.style.transform = 'rotate(360deg)';
-      setTimeout(() => {
-        icon.style.transform = 'rotate(0deg)';
-        updateProgressUI();
-        applyThemeAndPalette();
-        if (localStorage.getItem('bubble_photo')) setupFloatingBubbles();
-        showModal("🔄 รีเฟรชหน้าจอและอัปเดตข้อมูล UI เรียบร้อยแล้วครับ!");
-      }, 300);
-    }
-
-    /* ⚙️ เมนูตั้งค่าธีม และพาเลตสี */
-    function openThemeSettingsModal() {
-      document.getElementById('themeStyleSelect').value = activeThemeStyle;
-      if (activeThemeStyle === 'custom') {
-        document.getElementById('customBgSection').classList.remove('hidden');
-      } else {
-        document.getElementById('customBgSection').classList.add('hidden');
-      }
-      document.getElementById('themeModal').classList.remove('hidden');
-    }
-
-    function closeThemeSettingsModal() {
-      document.getElementById('themeModal').classList.add('hidden');
-    }
-
-    function changeThemeStyle(style) {
-      activeThemeStyle = style;
-      localStorage.setItem('theme_style', style);
-      if (style === 'custom') {
-        document.getElementById('customBgSection').classList.remove('hidden');
-      } else {
-        document.getElementById('customBgSection').classList.add('hidden');
-      }
-      applyThemeAndPalette();
-    }
-
-    function setColorPalette(paletteKey) {
-      activeColorPalette = paletteKey;
-      localStorage.setItem('color_palette', paletteKey);
-      applyThemeAndPalette();
-    }
-
-    function applyThemeAndPalette() {
-      const body = document.getElementById('appBody');
-      const card = document.getElementById('mainCard');
-      const p = palettes[activeColorPalette] || palettes.sakura;
-
-      // Reset classes
-      body.className = "min-h-screen p-3 sm:p-5 flex flex-col items-center justify-start relative transition-all duration-300 " + p.bg;
-      body.style.backgroundImage = 'none';
-
-      if (activeThemeStyle === 'custom' && customBgPhoto) {
-        body.style.backgroundImage = `url('${customBgPhoto}')`;
-        body.classList.add('custom-bg-cover');
-      }
-
-      if (activeThemeStyle === 'cute') {
-        card.className = `w-full max-w-md rounded-3xl p-5 shadow-2xl border transition-all duration-300 space-y-4 relative z-10 my-auto backdrop-blur-md ${p.card}`;
-      } else if (activeThemeStyle === 'minimal') {
-        card.className = `w-full max-w-md rounded-2xl p-5 shadow-md border transition-all duration-300 space-y-4 relative z-10 my-auto bg-gray-900/95 border-gray-700 text-gray-100`;
-      } else {
-        card.className = `w-full max-w-md rounded-3xl p-5 shadow-2xl border transition-all duration-300 space-y-4 relative z-10 my-auto bg-black/75 border-white/20 backdrop-blur-lg`;
-      }
-
-      document.getElementById('progressBar').className = `h-full rounded-full transition-all duration-500 ${p.bar}`;
-    }
-
-    document.getElementById('customBgInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          customBgPhoto = evt.target.result;
-          localStorage.setItem('custom_bg_photo', customBgPhoto);
-          applyThemeAndPalette();
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    function removeCustomBg() {
-      localStorage.removeItem('custom_bg_photo');
-      customBgPhoto = null;
-      applyThemeAndPalette();
-    }
-
-    /* 🫧 ระบบฟองสบู่ลอยฮีลใจ */
-    function setupFloatingBubbles() {
-      const container = document.getElementById('floatingBubblesContainer');
-      container.innerHTML = '';
-      container.classList.remove('hidden');
-
-      for (let i = 0; i < 5; i++) {
-        createMovingBubble(container, i * 650);
-      }
-    }
-
-    function createMovingBubble(container, delay) {
-      setTimeout(() => {
-        if (!localStorage.getItem('bubble_photo')) return;
-
-        const bubbleDiv = document.createElement('div');
-        const randomX = Math.floor(Math.random() * 75) + 10; 
-        const randomSize = Math.floor(Math.random() * 20) + 65; 
-        const randomDuration = (Math.random() * 1.5 + 2.2).toFixed(1); 
-        const randomPhrase = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
-
-        bubbleDiv.className = `absolute bottom-[-100px] flex flex-col items-center z-40`;
-        bubbleDiv.style.left = `${randomX}%`;
-        bubbleDiv.style.animation = `fastFloatAndFade ${randomDuration}s cubic-bezier(0.25, 1, 0.5, 1) infinite`;
-
-        bubbleDiv.innerHTML = `
-          <div class="relative rounded-full border-2 border-pink-400 shadow-lg shadow-pink-500/40 overflow-hidden bg-gray-800" style="width: ${randomSize}px; height: ${randomSize}px;">
-            <img src="${localStorage.getItem('bubble_photo')}" class="w-full h-full object-cover">
-          </div>
-          <span class="text-[9px] text-pink-100 mt-1 bg-black/80 px-2.5 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap shadow-md border border-pink-500/30 font-medium">
-            ${randomPhrase}
-          </span>
-        `;
-
-        container.appendChild(bubbleDiv);
-      }, delay);
-    }
-
-    /* 📅 ระบบสแกนตารางเรียน + แยกห้องเรียน (Class Room Extractor) */
-    document.getElementById('scheduleInput').addEventListener('change', async function(e) {
-      if(e.target.files.length > 0) {
-        const file = e.target.files[0];
-        
-        document.getElementById('scheduleStatus').innerText = "⏳ AI กำลังสแกนหาข้อมูลวิชาและห้องเรียน...";
-        document.getElementById('scheduleStatus').className = "text-[10px] text-amber-400 mt-1 animate-pulse font-medium";
-
-        try {
-          const worker = await Tesseract.createWorker('tha+eng');
-          const ret = await worker.recognize(file);
-          await worker.terminate();
-
-          const extractedText = ret.data.text.trim();
-          const rawTextLower = (file.name + " " + extractedText).toLowerCase();
-
-          if (!extractedText || extractedText.length < 5) {
-            document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบตัวอักษรใดๆ ในรูปภาพ กรุณาอัปโหลดใหม่";
-            document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1 font-medium";
-            showModal(`❌ เกิดข้อผิดพลาดในการประมวลผล!\n\nไม่พบตัวอักษรหรือรหัสวิชาใดๆ ในรูปภาพตารางเรียนนี้\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีความคมชัด และเห็นข้อความชัดเจนใหม่อีกครั้งครับ!`);
-            return;
-          }
-
-          // 1. ตรวจหาสาขาวิชา/ระดับชั้น
-          let detectedClass = "";
-          if (rawTextLower.includes('ปวช.3') || rawTextLower.includes('ปวช3') || rawTextLower.includes('ชอ.3')) {
-            detectedClass = "ปวช.3 ช่างอิเล็กทรอนิกส์";
-          } else if (rawTextLower.includes('ปวช.2') || rawTextLower.includes('ปวช2') || rawTextLower.includes('ชอ.2')) {
-            detectedClass = "ปวช.2 ช่างอิเล็กทรอนิกส์";
-          } else if (rawTextLower.includes('ปวช.1') || rawTextLower.includes('ปวช1') || rawTextLower.includes('ชอ.1') || rawTextLower.includes('ปวช') || rawTextLower.includes('อิเล็ก')) {
-            detectedClass = "ปวช.1 ช่างอิเล็กทรอนิกส์";
-          } else if (rawTextLower.includes('ไฟฟ้า') || rawTextLower.includes('ชฟ')) {
-            detectedClass = "ปวช. ช่างไฟฟ้ากำลัง";
-          } else if (rawTextLower.includes('ยนต์') || rawTextLower.includes('ชย')) {
-            detectedClass = "ปวช. ช่างยนต์";
-          } else if (rawTextLower.includes('ก่อสร้าง') || rawTextLower.includes('ชก')) {
-            detectedClass = "ปวช. ช่างก่อสร้าง";
-          } else if (rawTextLower.includes('กลโรงงาน') || rawTextLower.includes('ชกล')) {
-            detectedClass = "ปวช. ช่างกลโรงงาน";
-          } else if (rawTextLower.includes('สารสนเทศ') || rawTextLower.includes('ไอที') || rawTextLower.includes('it')) {
-            detectedClass = "ปวช. เทคโนโลยีสารสนเทศ";
-          } else if (rawTextLower.includes('ปวส')) {
-            detectedClass = "ปวส. เทคโนโลยีอิเล็กทรอนิกส์";
-          } else if (rawTextLower.includes('ม.6') || rawTextLower.includes('ม6')) {
-            detectedClass = "ม.6 วิทย์-คณิต";
-          } else if (rawTextLower.includes('ม.5') || rawTextLower.includes('ม5')) {
-            detectedClass = "ม.5 วิทย์-คณิต";
-          } else if (rawTextLower.includes('ม.4') || rawTextLower.includes('ม4')) {
-            if (rawTextLower.includes('ภาษา') || rawTextLower.includes('ศิลป์-ภาษา')) {
-              detectedClass = "ม.4 ศิลป์-ภาษา";
-            } else if (rawTextLower.includes('คำนวณ') || rawTextLower.includes('ศิลป์-คำนวณ')) {
-              detectedClass = "ม.4 ศิลป์-คำนวณ";
-            } else {
-              detectedClass = "ม.4 วิทย์-คณิต";
-            }
-          } else {
-            detectedClass = "นักเรียน/นักศึกษาทั่วไป";
-          }
-
-          // 2. ตรวจแยกเลขห้องเรียน/กลุ่มเรียน (Room Extraction Regex)
-          let detectedRoom = "";
-          const roomMatch = extractedText.match(/(ห้อง|กลุ่ม|room|sec|ห้องเรียน)\s*[:.-]?\s*([A-Za-z0-9\/\-]+)/i) || 
-                            extractedText.match(/([มปวชส]\.[0-9]\/[0-9]+)/i) ||
-                            extractedText.match(/([A-Z]-[0-9]{3,4})/i);
-
-          if (roomMatch) {
-            detectedRoom = roomMatch[0].trim();
-          } else {
-            // สุ่มค้นหารูปแบบ ตัวเลขห้อง เช่น 4/2 หรือ 501
-            const roomNumMatch = extractedText.match(/(\d\/\d+|\d{3})/);
-            detectedRoom = roomNumMatch ? `ห้อง/กลุ่ม ${roomNumMatch[0]}` : "ห้องเรียนหลัก";
-          }
-
-          studentClass = detectedClass;
-          studentRoom = detectedRoom;
-
-          localStorage.setItem('student_class', studentClass);
-          localStorage.setItem('student_room', studentRoom);
-          localStorage.setItem('schedule_name', file.name);
-
-          updateClassAndRoomUI();
-
-          document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
-          document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1 font-medium";
-
-          showModal(`🔍 AI OCR สแกนตารางเรียนสำเร็จ!\n\n• ไฟล์ภาพ: ${file.name}\n• แผนก/ชั้นเรียน: ${studentClass}\n• ระบบแยกห้องเรียน/กลุ่ม: ${studentRoom}\n\n💡 บันทึกข้อมูลตารางเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
-
-        } catch (err) {
-          console.error(err);
-          document.getElementById('scheduleStatus').innerText = "⚠️ สแกนรูปภาพล้มเหลว กรุณาอัปโหลดใหม่";
-          document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1 font-medium";
-          showModal(`❌ เกิดข้อผิดพลาดในการอ่านไฟล์ภาพ!\n\nกรุณาลองอัปโหลดรูปภาพตารางเรียนใหม่อีกครั้งครับ`);
+    <!-- Google Fonts: Kanit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        * {
+            font-family: 'Kanit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
-      }
-    });
 
-    /* ลบข้อมูลตารางเรียน */
-    function clearSchedule() {
-      localStorage.removeItem('student_class');
-      localStorage.removeItem('student_room');
-      localStorage.removeItem('schedule_name');
-      studentClass = "";
-      studentRoom = "";
-      
-      updateClassAndRoomUI();
-      document.getElementById('scheduleInput').value = "";
-      document.getElementById('scheduleStatus').innerText = "สถานะ: ยังไม่ได้อัปโหลดตารางเรียน";
-      document.getElementById('scheduleStatus').className = "text-[10px] opacity-70 mt-1";
+        /* Smooth scrolling for touch iPad panels */
+        .smooth-scroll {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
 
-      showModal(`🗑️ ลบข้อมูลตารางและห้องเรียนเรียบร้อยแล้วครับคุณ ${userName}!\n\nข้อมูลเก่าถูกล้างออกจากระบบแล้ว สามารถอัปโหลดใหม่ได้ทันทีครับ`);
-    }
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(150, 150, 150, 0.3);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(150, 150, 150, 0.5);
+        }
 
-    document.getElementById('bubbleImageInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          const base64Img = event.target.result;
-          localStorage.setItem('bubble_photo', base64Img);
-          setupFloatingBubbles();
+        /* Dynamic Glassmorphism Card Style */
+        .glass-card {
+            background: var(--card-bg, rgba(255, 255, 255, 0.85));
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.5));
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.06);
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .glass-card-interactive {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card-interactive:active {
+            transform: scale(0.98);
+        }
+
+        /* Speech Bubble Floating Effect */
+        @keyframes float-bubble {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+        }
+        .animate-float {
+            animation: float-bubble 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .animate-pulse-ring {
+            animation: pulse-ring 2.5s ease-in-out infinite;
+        }
+
+        /* Dynamic CSS Theme Variable Container */
+        :root {
+            --app-bg: #fff0f5;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --text-muted: #a0aec0;
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --accent-color: #ff6b8b;
+            --accent-hover: #ff4770;
+            --accent-light: #ffe3e8;
+        }
+
+        /* Dynamic Theme Application */
+        body {
+            background-color: var(--app-bg);
+            color: var(--text-primary);
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        /* Dynamic Text Helper Utilities */
+        .dyn-text-primary { color: var(--text-primary) !important; }
+        .dyn-text-secondary { color: var(--text-secondary) !important; }
+        .dyn-text-muted { color: var(--text-muted) !important; }
+        .dyn-border { border-color: var(--card-border) !important; }
+        .dyn-accent { background-color: var(--accent-color) !important; }
+        .dyn-accent-text { color: var(--accent-color) !important; }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col antialiased">
+
+    <!-- TOP IPAD NAVIGATION & ACTION BAR -->
+    <header class="h-16 px-6 flex items-center justify-between border-b dyn-border glass-card shrink-0 z-30">
+        <!-- App Brand -->
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-2xl dyn-accent flex items-center justify-center text-white text-xl shadow-md">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-none dyn-text-primary">Daily Student & Savings</h1>
+                <p class="text-xs font-medium dyn-text-secondary">iPad Native Landscape Edition</p>
+            </div>
+        </div>
+
+        <!-- Center Status / Clock -->
+        <div class="hidden md:flex items-center space-x-2 px-4 py-1.5 rounded-full glass-card dyn-text-primary font-medium text-sm">
+            <i class="fa-regular fa-clock dyn-accent-text"></i>
+            <span id="ipad-clock">00:00:00</span>
+            <span class="opacity-30">|</span>
+            <span id="ipad-date" class="dyn-text-secondary">--/--/----</span>
+        </div>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center space-x-3">
+            <button onclick="refreshApp(true)" title="รีเฟรชข้อมูล" 
+                class="px-4 py-2 rounded-xl glass-card glass-card-interactive flex items-center space-x-2 font-medium text-sm dyn-text-primary hover:opacity-90">
+                <i class="fa-solid fa-rotate-right text-xs"></i>
+                <span>รีเฟรช</span>
+            </button>
+
+            <button onclick="toggleThemeModal()" title="ตั้งค่าธีม" 
+                class="px-4 py-2 rounded-xl dyn-accent text-white font-medium text-sm flex items-center space-x-2 shadow-sm hover:brightness-110 active:scale-95 transition-all">
+                <i class="fa-solid fa-palette"></i>
+                <span>ตั้งค่าธีม</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN IPAD LANDSCAPE LAYOUT (SIDEBAR 320px / MAIN AREA FLEX-1) -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- LEFT SIDEBAR SUMMARY PANEL (320px) -->
+        <aside class="w-80 border-r dyn-border flex flex-col p-5 space-y-5 smooth-scroll overflow-y-auto shrink-0 z-20">
+            
+            <!-- Classroom OCR Summary Badge -->
+            <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider dyn-text-muted">ห้องเรียน / สาขา</span>
+                    <span id="ocr-status-dot" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1 animate-ping"></span>
+                        รอยืนยัน
+                    </span>
+                </div>
+                <div id="classroom-display" class="font-bold text-xl dyn-text-primary flex items-center space-x-2">
+                    <i class="fa-solid fa-school text-lg dyn-accent-text"></i>
+                    <span>ยังไม่สแกนตาราง</span>
+                </div>
+                <p id="classroom-subtext" class="text-xs dyn-text-secondary mt-1">อัปโหลดตารางเรียนเพื่อตรวจจับระบบ "ทับ"</p>
+            </div>
+
+            <!-- Savings Goal Progress Card -->
+            <div class="glass-card p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider dyn-text-muted">เป้าหมายเงินออม</span>
+                        <h3 id="savings-title-display" class="font-bold text-lg dyn-text-primary leading-snug">สะสมกองทุน</h3>
+                    </div>
+                    <button onclick="openEditGoalModal()" class="w-8 h-8 rounded-xl glass-card flex items-center justify-center dyn-text-secondary hover:dyn-text-primary">
+                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-baseline mb-1">
+                        <span class="text-2xl font-black dyn-text-primary" id="savings-current-text">฿0</span>
+                        <span class="text-xs dyn-text-secondary font-medium">จาก <span id="savings-target-text">฿1,000</span></span>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="w-full h-3 bg-black/10 rounded-full overflow-hidden p-0.5 relative">
+                        <div id="savings-progress-bar" class="h-full dyn-accent rounded-full transition-all duration-500" style="width: 0%;"></div>
+                    </div>
+                    <div class="flex justify-between text-[11px] dyn-text-muted font-medium mt-1">
+                        <span id="savings-percent-text">0% สำเร็จ</span>
+                        <span id="savings-remaining-text">เหลือ ฿1,000</span>
+                    </div>
+                </div>
+
+                <!-- Savings Action Buttons -->
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button onclick="openAddSavingsModal()" class="py-2 px-3 dyn-accent text-white rounded-xl font-medium text-xs flex items-center justify-center space-x-1 shadow-sm hover:brightness-105 active:scale-95">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>ออมเงินเพิ่ม</span>
+                    </button>
+                    <button onclick="resetSavingsConfirm()" class="py-2 px-3 glass-card rounded-xl font-medium text-xs dyn-text-secondary flex items-center justify-center space-x-1 hover:dyn-text-primary active:scale-95">
+                        <i class="fa-solid fa-arrow-rotate-left text-[10px]"></i>
+                        <span>รีเซ็ต</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Theme Color Palette Picker Swatches -->
+            <div class="glass-card p-4 rounded-2xl space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider dyn-text-muted block">เปลี่ยนโทนสีด่วน</span>
+                <div class="grid grid-cols-4 gap-2.5" id="quick-palette-swatches">
+                    <!-- Dynamic Swatches Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Motivational Floating Speech Bubble -->
+            <div class="glass-card p-4 rounded-2xl relative animate-float flex items-start space-x-3 mt-auto">
+                <div class="w-12 h-12 rounded-2xl bg-pink-100 flex items-center justify-center text-2xl shrink-0 shadow-sm" id="bubble-emoji">
+                    🐰
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider dyn-text-muted">กำลังใจวันนี้</span>
+                        <button onclick="rotateMotivationalQuote()" class="dyn-text-muted hover:dyn-text-primary text-xs">
+                            <i class="fa-solid fa-shuffle"></i>
+                        </button>
+                    </div>
+                    <p id="bubble-quote-text" class="text-xs dyn-text-primary font-medium mt-0.5 leading-relaxed">
+                        "ฮั่นแน่! ตั้งใจเรียนแล้วอย่าลืมพักผ่อนด้วยนะ! 💖"
+                    </p>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- RIGHT MAIN FUNCTIONAL AREA (FLEX-1 SPLIT INTO CARDS) -->
+        <main class="flex-1 p-6 smooth-scroll overflow-y-auto space-y-6">
+            
+            <!-- SECTION 1: OCR SCHEDULE UPLOAD & PARSER -->
+            <section class="glass-card p-6 rounded-3xl space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b dyn-border pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold dyn-text-primary flex items-center space-x-2">
+                            <i class="fa-solid fa-calendar-week dyn-accent-text"></i>
+                            <span>ระบบสแกนตารางเรียน & ตรวจจับระดับชั้น (ทับ)</span>
+                        </h2>
+                        <p class="text-xs dyn-text-secondary mt-0.5">อัปโหลดรูปตารางเรียน รองรับ ม.4/6, ปวช.1/2, ปวส.2/1 พร้อมตรวจจับสาขาวิชา</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="clear-schedule-btn" onclick="clearSchedule()" class="px-3 py-1.5 rounded-xl glass-card text-xs font-medium text-red-500 hover:bg-red-50 flex items-center space-x-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>ล้างตารางเรียน</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <!-- Dropzone -->
+                    <div class="border-2 border-dashed dyn-border rounded-2xl p-6 text-center flex flex-col items-center justify-center min-h-[180px] bg-black/5 hover:bg-black/10 transition-colors relative cursor-pointer group"
+                        onclick="document.getElementById('schedule-file-input').click()">
+                        <input type="file" id="schedule-file-input" accept="image/*" class="hidden" onchange="handleScheduleUpload(event)">
+                        
+                        <div id="upload-idle-state" class="flex flex-col items-center space-y-2">
+                            <div class="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-2xl dyn-accent-text group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                            </div>
+                            <span class="text-sm font-semibold dyn-text-primary">แตะเพื่ออัปโหลดตารางเรียน</span>
+                            <span class="text-xs dyn-text-muted">รองรับไฟล์ PNG, JPG (OCR อ่านภาษาไทย)</span>
+                        </div>
+
+                        <!-- Progress Bar for OCR -->
+                        <div id="ocr-loading-state" class="hidden flex-col items-center space-y-3 w-full px-4">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl dyn-accent-text"></i>
+                            <span class="text-xs font-bold dyn-text-primary" id="ocr-status-text">กำลังวิเคราะห์ตารางเรียน...</span>
+                            <div class="w-full bg-black/10 h-2 rounded-full overflow-hidden">
+                                <div id="ocr-progress-bar" class="h-full dyn-accent rounded-full transition-all duration-300" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scan Results & Extracted Information -->
+                    <div class="space-y-3">
+                        <div class="glass-card p-4 rounded-2xl border dyn-border space-y-2">
+                            <span class="text-xs font-bold uppercase tracking-wider dyn-text-muted">ผลการตรวจจับจาก OCR</span>
+                            <div class="space-y-1">
+                                <div class="text-sm font-semibold dyn-text-primary" id="ocr-result-slash-class">
+                                    ตรวจพบ: <span class="dyn-accent-text font-bold">ยังไม่มีข้อมูล</span>
+                                </div>
+                                <div class="text-xs dyn-text-secondary" id="ocr-result-track">
+                                    แผนการเรียน / สาขา: <span class="font-medium">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Extracted Raw / Filtered Subjects -->
+                        <div class="glass-card p-4 rounded-2xl border dyn-border space-y-2">
+                            <span class="text-xs font-bold uppercase tracking-wider dyn-text-muted">รายการวิชาที่พบในตาราง</span>
+                            <div id="schedule-subjects-list" class="flex flex-wrap gap-1.5 min-h-[48px] items-center">
+                                <span class="text-xs dyn-text-muted font-italic">อัปโหลดรูปภาพเพื่อดูรายชื่อวิชา</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: DAILY LOG & QUICK STATUS BUTTONS -->
+            <section class="glass-card p-6 rounded-3xl space-y-4">
+                <div class="flex items-center justify-between border-b dyn-border pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold dyn-text-primary flex items-center space-x-2">
+                            <i class="fa-solid fa-square-check dyn-accent-text"></i>
+                            <span>บันทึกสถานะประจำวัน (Daily Log)</span>
+                        </h2>
+                        <p class="text-xs dyn-text-secondary mt-0.5">เช็กอินการทำกิจกรรมประจำวัน รับข้อความกำลังใจทันที</p>
+                    </div>
+                    <span id="log-count-badge" class="px-3 py-1 rounded-full text-xs font-bold glass-card dyn-text-primary">
+                        ทำแล้ว 0/4 กิจกรรม
+                    </span>
+                </div>
+
+                <!-- Quick Check-in Buttons -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="recordDailyLog('ตื่นนอน', '🌅', 'อรุณสวัสดิ์! เริ่มต้นวันใหม่อย่างสดใสนะคะ')" 
+                        id="btn-log-ตื่นนอน"
+                        class="glass-card glass-card-interactive p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border dyn-border group">
+                        <span class="text-3xl group-hover:scale-110 transition-transform">🌅</span>
+                        <span class="font-bold text-sm dyn-text-primary">ตื่นนอน</span>
+                        <span class="text-[10px] dyn-text-muted log-time-stamp" id="time-ตื่นนอน">ยังไม่ได้เช็ก</span>
+                    </button>
+
+                    <button onclick="recordDailyLog('ถึงสถาบัน', '🏫', 'ถึงที่เรียนแล้ว! สู้ๆ กับการเรียนวันนี้')" 
+                        id="btn-log-ถึงสถาบัน"
+                        class="glass-card glass-card-interactive p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border dyn-border group">
+                        <span class="text-3xl group-hover:scale-110 transition-transform">🏫</span>
+                        <span class="font-bold text-sm dyn-text-primary">ถึงสถาบัน</span>
+                        <span class="text-[10px] dyn-text-muted log-time-stamp" id="time-ถึงสถาบัน">ยังไม่ได้เช็ก</span>
+                    </button>
+
+                    <button onclick="recordDailyLog('ถึงที่พัก', '🏠', 'กลับถึงห้องแล้ว พักผ่อนให้สบายใจเลยน้า')" 
+                        id="btn-log-ถึงที่พัก"
+                        class="glass-card glass-card-interactive p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border dyn-border group">
+                        <span class="text-3xl group-hover:scale-110 transition-transform">🏠</span>
+                        <span class="font-bold text-sm dyn-text-primary">ถึงที่พัก</span>
+                        <span class="text-[10px] dyn-text-muted log-time-stamp" id="time-ถึงที่พัก">ยังไม่ได้เช็ก</span>
+                    </button>
+
+                    <button onclick="recordDailyLog('เข้านอน', '🌙', 'ฝันดีนะคะ พักผ่อนให้เต็มที่เพื่อวันพรุ่งนี้')" 
+                        id="btn-log-เข้านอน"
+                        class="glass-card glass-card-interactive p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border dyn-border group">
+                        <span class="text-3xl group-hover:scale-110 transition-transform">🌙</span>
+                        <span class="font-bold text-sm dyn-text-primary">เข้านอน</span>
+                        <span class="text-[10px] dyn-text-muted log-time-stamp" id="time-เข้านอน">ยังไม่ได้เช็ก</span>
+                    </button>
+                </div>
+
+                <!-- Custom Photo / Activity Moment Logger -->
+                <div class="pt-2">
+                    <div class="glass-card p-4 rounded-2xl flex items-center justify-between border dyn-border">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl glass-card flex items-center justify-center text-xl dyn-accent-text">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold dyn-text-primary">แชร์ภาพกิจกรรมวันนี้</h4>
+                                <p class="text-xs dyn-text-secondary">อัปโหลดรูปความประทับใจเพื่อรับคำคมสร้างแรงบันดาลใจ</p>
+                            </div>
+                        </div>
+                        <label class="cursor-pointer py-2 px-4 dyn-accent text-white rounded-xl text-xs font-bold hover:brightness-105 active:scale-95 transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>เลือกรูปภาพ</span>
+                            <input type="file" accept="image/*" class="hidden" onchange="handleActivityImageUpload(event)">
+                        </label>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL 1: THEME & COLOR SETTINGS -->
+    <div id="theme-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-6 border dyn-border animate-float" style="animation-duration: 0.3s; animation-iteration-count: 1;">
+            <div class="flex items-center justify-between border-b dyn-border pb-3">
+                <h3 class="text-lg font-bold dyn-text-primary flex items-center space-x-2">
+                    <i class="fa-solid fa-palette dyn-accent-text"></i>
+                    <span>ปรับแต่งธีม & สีฟอนต์อัตโนมัติ</span>
+                </h3>
+                <button onclick="toggleThemeModal()" class="w-8 h-8 rounded-full glass-card flex items-center justify-center dyn-text-secondary hover:dyn-text-primary">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Mode Selector -->
+            <div class="space-y-2">
+                <label class="text-xs font-bold uppercase tracking-wider dyn-text-muted">รูปแบบธีม (Theme Mode)</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setThemeMode('pastel')" id="theme-btn-pastel" class="py-2.5 px-3 rounded-xl border text-xs font-bold dyn-text-primary flex flex-col items-center space-y-1 glass-card">
+                        <span class="text-base">💖</span>
+                        <span>ธีมน่ารัก</span>
+                    </button>
+                    <button onclick="setThemeMode('clean')" id="theme-btn-clean" class="py-2.5 px-3 rounded-xl border text-xs font-bold dyn-text-primary flex flex-col items-center space-y-1 glass-card">
+                        <span class="text-base">💼</span>
+                        <span>ธีมธรรมดา</span>
+                    </button>
+                    <button onclick="setThemeMode('custom')" id="theme-btn-custom" class="py-2.5 px-3 rounded-xl border text-xs font-bold dyn-text-primary flex flex-col items-center space-y-1 glass-card">
+                        <span class="text-base">🖼️</span>
+                        <span>ธีมกำหนดเอง</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Palette Selector -->
+            <div class="space-y-2">
+                <label class="text-xs font-bold uppercase tracking-wider dyn-text-muted">จานสีประธาน (Palette Color)</label>
+                <div class="grid grid-cols-4 gap-2.5" id="modal-palette-options">
+                    <!-- Dynamic Palette Injected by JS -->
+                </div>
+            </div>
+
+            <!-- Custom Background URL Input (Conditional) -->
+            <div id="custom-bg-container" class="space-y-2 hidden">
+                <label class="text-xs font-bold uppercase tracking-wider dyn-text-muted">ลิงก์รูปพื้นหลัง (Custom BG URL)</label>
+                <input type="text" id="custom-bg-input" placeholder="https://images.unsplash.com/..." 
+                    class="w-full px-3 py-2 rounded-xl border dyn-border glass-card text-xs dyn-text-primary focus:outline-none focus:ring-2 focus:ring-pink-400">
+                <button onclick="applyCustomBG()" class="w-full py-2 rounded-xl dyn-accent text-white text-xs font-bold">นำรูปพื้นหลังมาใช้</button>
+            </div>
+
+            <p class="text-[11px] dyn-text-muted text-center italic">
+                ✨ สีฟอนต์ ป้ายกำกับ และความคมชัดขององค์ประกอบจะถูกคำนวณและปรับอัตโนมัติเพื่อให้ อ่านง่ายที่สุดทุกธีม
+            </p>
+
+            <button onclick="toggleThemeModal()" class="w-full py-3 rounded-xl dyn-accent text-white font-bold text-sm shadow-md">
+                เสร็จสิ้น
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD SAVINGS MODAL -->
+    <div id="add-savings-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5 border dyn-border">
+            <div class="flex items-center justify-between border-b dyn-border pb-3">
+                <h3 class="text-lg font-bold dyn-text-primary flex items-center space-x-2">
+                    <i class="fa-solid fa-piggy-bank dyn-accent-text"></i>
+                    <span>บันทึกการออมเงิน</span>
+                </h3>
+                <button onclick="closeAddSavingsModal()" class="w-8 h-8 rounded-full glass-card flex items-center justify-center dyn-text-secondary hover:dyn-text-primary">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <label class="text-xs font-bold uppercase tracking-wider dyn-text-muted">จำนวนเงินที่ต้องการออม (บาท)</label>
+                <input type="number" id="savings-amount-input" placeholder="เช่น 50, 100" 
+                    class="w-full px-4 py-3 rounded-2xl border dyn-border glass-card text-lg font-bold dyn-text-primary focus:outline-none focus:ring-2 focus:ring-pink-400">
+                
+                <div class="grid grid-cols-4 gap-2 pt-1">
+                    <button onclick="quickAddSavings(20)" class="py-2 glass-card rounded-xl text-xs font-bold dyn-text-primary">+20฿</button>
+                    <button onclick="quickAddSavings(50)" class="py-2 glass-card rounded-xl text-xs font-bold dyn-text-primary">+50฿</button>
+                    <button onclick="quickAddSavings(100)" class="py-2 glass-card rounded-xl text-xs font-bold dyn-text-primary">+100฿</button>
+                    <button onclick="quickAddSavings(500)" class="py-2 glass-card rounded-xl text-xs font-bold dyn-text-primary">+500฿</button>
+                </div>
+            </div>
+
+            <div class="flex space-x-3">
+                <button onclick="closeAddSavingsModal()" class="flex-1 py-3 rounded-xl glass-card font-bold text-xs dyn-text-secondary">ยกเลิก</button>
+                <button onclick="confirmAddSavings()" class="flex-1 py-3 rounded-xl dyn-accent text-white font-bold text-xs shadow-md">บันทึกยอดเงิน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: EDIT GOAL MODAL -->
+    <div id="edit-goal-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5 border dyn-border">
+            <div class="flex items-center justify-between border-b dyn-border pb-3">
+                <h3 class="text-lg font-bold dyn-text-primary flex items-center space-x-2">
+                    <i class="fa-solid fa-bullseye dyn-accent-text"></i>
+                    <span>แก้ไขเป้าหมายการออม</span>
+                </h3>
+                <button onclick="closeEditGoalModal()" class="w-8 h-8 rounded-full glass-card flex items-center justify-center dyn-text-secondary hover:dyn-text-primary">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider dyn-text-muted">ชื่อเป้าหมาย</label>
+                    <input type="text" id="goal-title-input" placeholder="เช่น ซื้อ iPad, กองทุนการศึกษา" 
+                        class="w-full px-4 py-2.5 rounded-xl border dyn-border glass-card text-sm font-semibold dyn-text-primary focus:outline-none focus:ring-2 focus:ring-pink-400 mt-1">
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider dyn-text-muted">จำนวนเงินเป้าหมาย (บาท)</label>
+                    <input type="number" id="goal-target-input" placeholder="เช่น 2000" 
+                        class="w-full px-4 py-2.5 rounded-xl border dyn-border glass-card text-sm font-semibold dyn-text-primary focus:outline-none focus:ring-2 focus:ring-pink-400 mt-1">
+                </div>
+            </div>
+
+            <div class="flex space-x-3">
+                <button onclick="closeEditGoalModal()" class="flex-1 py-3 rounded-xl glass-card font-bold text-xs dyn-text-secondary">ยกเลิก</button>
+                <button onclick="confirmEditGoal()" class="flex-1 py-3 rounded-xl dyn-accent text-white font-bold text-xs shadow-md">บันทึกเป้าหมาย</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: AI RESPONSE / MOTIVATIONAL MODAL -->
+    <div id="motivation-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4 border dyn-border">
+            <div class="w-16 h-16 rounded-full dyn-accent text-white text-3xl flex items-center justify-center mx-auto shadow-lg" id="ai-modal-emoji">
+                🌟
+            </div>
+            <h3 class="text-lg font-bold dyn-text-primary" id="ai-modal-title">เช็กอินสำเร็จ!</h3>
+            <p class="text-sm dyn-text-secondary leading-relaxed" id="ai-modal-body">
+                เก่งมากเลย! พยายามต่อไปนะ ทุกก้าวเล็กๆ คือความสำเร็จ
+            </p>
+            <button onclick="closeMotivationModal()" class="w-full py-2.5 rounded-xl dyn-accent text-white font-bold text-xs shadow-md">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & STATE MANAGEMENT -->
+    <script>
+        // -------------------------------------------------------------
+        // STATE MANAGEMENT
+        // -------------------------------------------------------------
+        const PALETTES = {
+            sakura: { name: 'Sakura Pink', bg: '#fff0f5', accent: '#ff6b8b', dark: false },
+            cyan: { name: 'Cyan Sky', bg: '#f0f8ff', accent: '#00b4d8', dark: false },
+            emerald: { name: 'Emerald Mint', bg: '#f0fff4', accent: '#2ec4b6', dark: false },
+            lavender: { name: 'Lavender', bg: '#f3e8ff', accent: '#9d4edd', dark: false },
+            peach: { name: 'Peach Amber', bg: '#fff5eb', accent: '#f97316', dark: false },
+            charcoal: { name: 'Dark Charcoal', bg: '#18181b', accent: '#a855f7', dark: true },
+            rosegold: { name: 'Rose Gold', bg: '#fff1f2', accent: '#e11d48', dark: false },
+            sunset: { name: 'Sunset Coral', bg: '#fff7ed', accent: '#ea580c', dark: false }
         };
-        reader.readAsDataURL(file);
-      }
-    });
 
-    function updateProgressUI() {
-      let percent = (currentSavings / targetAmount) * 100;
-      if (percent > 100) percent = 100;
-      document.getElementById('displayGoalProgress').innerText = `${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท`;
-      document.getElementById('progressBar').style.width = `${percent}%`;
-    }
+        const MOTIVATIONAL_QUOTES = [
+            { emoji: '🐰✨', quote: 'ฮั่นแน่! ตั้งใจเรียนแล้วอย่าลืมพักผ่อนด้วยน้า!' },
+            { emoji: '🧸💖', quote: 'เก่งมากๆ เลยวันนี้! สะสมความสำเร็จทีละนิดนะ' },
+            { emoji: '🌟🎓', quote: 'ความพยายามในวันนี้ จะส่งผลให้เราเติบโตอย่างงดงาม' },
+            { emoji: '🐱☕', quote: 'เหนื่อยก็พักสักครู่ จิบน้ำแล้วค่อยลุยต่อนะคะ' },
+            { emoji: '🍀🌈', quote: 'ขอให้วันนี้เป็นวันที่ใจดีกับเธอ มีแต่รอยยิ้มนะ!' }
+        ];
 
-    function showModal(message) {
-      document.getElementById('modalMessage').innerText = message;
-      document.getElementById('customModal').classList.remove('hidden');
-    }
+        let appState = {
+            themeMode: 'pastel', // 'pastel', 'clean', 'custom'
+            paletteKey: 'sakura',
+            customBgUrl: '',
+            savings: {
+                title: 'สะสมกองทุน iPad',
+                current: 250,
+                target: 1000
+            },
+            classroom: 'ยังไม่สแกนตาราง',
+            track: '-',
+            dailyLogs: {},
+            subjectsFound: []
+        };
 
-    function closeModal() {
-      document.getElementById('customModal').classList.add('hidden');
-    }
+        // -------------------------------------------------------------
+        // INIT & LOCALSTORAGE
+        // -------------------------------------------------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromStorage();
+            startClock();
+            renderPaletteSwatches();
+            applyTheme();
+            updateSavingsUI();
+            updateDailyLogUI();
+            rotateMotivationalQuote();
+        });
 
-    function saveGoalSettings() {
-      const titleInput = document.getElementById('goalTitleInput').value.trim();
-      const targetInput = document.getElementById('goalTargetInput').value;
+        function saveStateToStorage() {
+            localStorage.setItem('daily_student_app_state', JSON.stringify(appState));
+        }
 
-      if (targetInput) {
-        targetAmount = parseFloat(targetInput) || 6000;
-      }
-      goalTitle = titleInput ? titleInput : "เป้าหมายการเก็บเงิน";
+        function loadStateFromStorage() {
+            const saved = localStorage.getItem('daily_student_app_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appState = { ...appState, ...parsed };
+                } catch(e) { console.error("Error loading state", e); }
+            }
+        }
 
-      localStorage.setItem('saved_title', goalTitle);
-      localStorage.setItem('saved_target', targetAmount);
+        function refreshApp(showToast = false) {
+            loadStateFromStorage();
+            applyTheme();
+            updateSavingsUI();
+            updateDailyLogUI();
+            if (showToast) {
+                showMotivation('🔄', 'รีเฟรชเรียบร้อย', 'ข้อมูลทั้งหมดถูกอัปเดตเป็นปัจจุบันแล้วค่ะ');
+            }
+        }
 
-      document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
-      updateProgressUI();
+        // -------------------------------------------------------------
+        // CLOCK
+        // -------------------------------------------------------------
+        function startClock() {
+            const updateTime = () => {
+                const now = new Date();
+                document.getElementById('ipad-clock').textContent = now.toLocaleTimeString('th-TH');
+                document.getElementById('ipad-date').textContent = now.toLocaleDateString('th-TH', {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                });
+            };
+            updateTime();
+            setInterval(updateTime, 1000);
+        }
 
-      showModal(`🎯 บันทึกตั้งค่าเป้าหมายสำเร็จ!\n• หัวข้อ: ${goalTitle}\n• เป้าหมายใหม่: ${targetAmount.toLocaleString()} บาท\n• ยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} บาท`);
-    }
+        // -------------------------------------------------------------
+        // DYNAMIC THEME & FONT COLOR ADJUSTER
+        // -------------------------------------------------------------
+        function setThemeMode(mode) {
+            appState.themeMode = mode;
+            if (mode === 'custom') {
+                document.getElementById('custom-bg-container').classList.remove('hidden');
+            } else {
+                document.getElementById('custom-bg-container').classList.add('hidden');
+            }
+            applyTheme();
+            saveStateToStorage();
+        }
 
-    function addSavings() {
-      const addInput = document.getElementById('addMoneyInput').value;
-      const addVal = parseFloat(addInput);
-      
-      if (!isNaN(addVal) && addVal > 0) {
-        currentSavings += addVal;
-        localStorage.setItem('saved_money', currentSavings);
-      } else {
-        alert('กรุณากรอกจำนวนเงินที่ต้องการฝากเพิ่มให้ถูกต้องครับ!');
-        return;
-      }
+        function setPalette(paletteKey) {
+            appState.paletteKey = paletteKey;
+            applyTheme();
+            saveStateToStorage();
+        }
 
-      updateProgressUI();
-      document.getElementById('addMoneyInput').value = '';
-      
-      let percent = (currentSavings / targetAmount) * 100;
-      if (percent > 100) percent = 100;
+        function applyTheme() {
+            const palette = PALETTES[appState.paletteKey] || PALETTES.sakura;
+            const root = document.documentElement;
 
-      showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\n• ยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับคุณ ${userName} อีกนิดเดียวก็ถึงเป้าหมายแล้ว!`);
-    }
+            let isDark = palette.dark;
+            let bgColor = palette.bg;
 
-    function quickSelect(actionText) {
-      const now = new Date();
-      const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      document.getElementById('userNote').value = `${timeString} น. - ${actionText}`;
-    }
+            if (appState.themeMode === 'clean') {
+                bgColor = isDark ? '#121212' : '#f8fafc';
+            } else if (appState.themeMode === 'custom' && appState.customBgUrl) {
+                document.body.style.backgroundImage = `url('${appState.customBgUrl}')`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+            } else {
+                document.body.style.backgroundImage = 'none';
+            }
 
-    function handleFormSubmit(event) {
-      event.preventDefault();
-      const note = document.getElementById('userNote').value;
-      const imageInput = document.getElementById('imageInput');
+            root.style.setProperty('--app-bg', bgColor);
+            root.style.setProperty('--accent-color', palette.accent);
 
-      if (!note && imageInput.files.length === 0) {
-        alert('กรุณากรอกข้อความหรือเลือกรูปภาพก่อนส่งครับ!');
-        return;
-      }
+            // Dynamic Font Adjuster based on Lightness/Darkness
+            if (isDark) {
+                root.style.setProperty('--text-primary', '#f8fafc');
+                root.style.setProperty('--text-secondary', '#cbd5e1');
+                root.style.setProperty('--text-muted', '#64748b');
+                root.style.setProperty('--card-bg', 'rgba(30, 41, 59, 0.85)');
+                root.style.setProperty('--card-border', 'rgba(255, 255, 255, 0.12)');
+            } else {
+                root.style.setProperty('--text-primary', '#1e293b');
+                root.style.setProperty('--text-secondary', '#475569');
+                root.style.setProperty('--text-muted', '#94a3b8');
+                root.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.85)');
+                root.style.setProperty('--card-border', 'rgba(255, 255, 255, 0.6)');
+            }
 
-      let encouragement = `💖 เก่งมากครับคุณ ${userName}! วันนี้มีความตั้งใจและมีวินัยสุดๆ ขอให้เป็นวันที่ราบรื่นและมีความสุข พักผ่อนเยอะๆ นะครับ!`;
-      if (imageInput.files.length > 0) {
-        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้สู้ๆ นะครับ!`;
-      }
+            // Update Theme Buttons Active State
+            ['pastel', 'clean', 'custom'].forEach(m => {
+                const btn = document.getElementById(`theme-btn-${m}`);
+                if (btn) {
+                    if (appState.themeMode === m) {
+                        btn.style.borderColor = palette.accent;
+                        btn.style.borderWidth = '2px';
+                    } else {
+                        btn.style.borderWidth = '1px';
+                    }
+                }
+            });
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n• ผู้ใช้งาน: ${userName}\n• ระดับชั้น: ${studentClass || 'ทั่วไป'}\n• ห้องเรียน: ${studentRoom || 'ไม่ระบุ'}\n• บันทึก: "${note || 'ไม่มีข้อความ'}"\n• ยอดเงินออมสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
-      
-      showModal(responseMsg);
-    }
-  </script>
+            renderPaletteSwatches();
+        }
+
+        function renderPaletteSwatches() {
+            const quickContainer = document.getElementById('quick-palette-swatches');
+            const modalContainer = document.getElementById('modal-palette-options');
+
+            const createHTML = (key) => {
+                const p = PALETTES[key];
+                const active = appState.paletteKey === key ? 'ring-2 ring-offset-2 ring-pink-500 scale-105' : '';
+                return `
+                    <button onclick="setPalette('${key}')" 
+                        title="${p.name}"
+                        class="h-8 rounded-xl flex items-center justify-center transition-all ${active}" 
+                        style="background-color: ${p.accent}">
+                        <span class="w-2.5 h-2.5 rounded-full bg-white/80"></span>
+                    </button>
+                `;
+            };
+
+            const html = Object.keys(PALETTES).map(createHTML).join('');
+            if (quickContainer) quickContainer.innerHTML = html;
+            if (modalContainer) modalContainer.innerHTML = html;
+        }
+
+        function applyCustomBG() {
+            const url = document.getElementById('custom-bg-input').value.trim();
+            if (url) {
+                appState.customBgUrl = url;
+                applyTheme();
+                saveStateToStorage();
+            }
+        }
+
+        function toggleThemeModal() {
+            const modal = document.getElementById('theme-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // -------------------------------------------------------------
+        // OCR CLASSROOM DETECTION ("ทับ" FORMAT e.g., 4/2, 4/6, ปวช.1/2)
+        // -------------------------------------------------------------
+        function handleScheduleUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // UI Progress Switch
+            document.getElementById('upload-idle-state').classList.add('hidden');
+            document.getElementById('ocr-loading-state').classList.remove('hidden');
+            document.getElementById('ocr-loading-state').classList.add('flex');
+
+            Tesseract.recognize(
+                file,
+                'tha+eng',
+                {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const pct = Math.round(m.progress * 100);
+                            document.getElementById('ocr-progress-bar').style.width = pct + '%';
+                            document.getElementById('ocr-status-text').textContent = `กำลังวิเคราะห์รูปภาพ (${pct}%)`;
+                        }
+                    }
+                }
+            ).then(({ data: { text } }) => {
+                parseOCRScheduleText(text);
+            }).catch(err => {
+                console.error("OCR Error:", err);
+                showMotivation('⚠️', 'อ่านตารางไม่สำเร็จ', 'ลองใช้อัปโหลดภาพตารางเรียนที่ชัดเจนขึ้นนะคะ');
+            }).finally(() => {
+                document.getElementById('upload-idle-state').classList.remove('hidden');
+                document.getElementById('ocr-loading-state').classList.add('hidden');
+                document.getElementById('ocr-loading-state').classList.remove('flex');
+            });
+        }
+
+        function parseOCRScheduleText(rawText) {
+            console.log("Raw OCR Text:", rawText);
+
+            // Regex detection for Slash Format Classroom e.g. ม.4/6, ปวช.1/2, ปวส.2/1, 4/2
+            const slashClassRegex = /(?:ม\.|มัธยม|ปวช\.|ปวส\.)?\s*([1-6]|[๑-๖])\s*\/\s*([0-9]{1,2}|[๐-๙]{1,2})/;
+            
+            // Educational Tracks / Branches
+            const trackKeywords = [
+                { keyword: 'วิทย์-คณิต', label: 'วิทย์-คณิต' },
+                { keyword: 'ศิลป์-คำนวณ', label: 'ศิลป์-คำนวณ' },
+                { keyword: 'ศิลป์-ภาษา', label: 'ศิลป์-ภาษา' },
+                { keyword: 'ช่างอิเล็กทรอนิกส์', label: 'ช่างอิเล็กทรอนิกส์' },
+                { keyword: 'อิเล็กทรอนิกส์', label: 'ช่างอิเล็กทรอนิกส์' },
+                { keyword: 'ช่างไฟฟ้า', label: 'ช่างไฟฟ้า' },
+                { keyword: 'ช่างยนต์', label: 'ช่างยนต์' },
+                { keyword: 'คอมพิวเตอร์ธุรกิจ', label: 'คอมพิวเตอร์ธุรกิจ' },
+                { keyword: 'การบัญชี', label: 'การบัญชี' }
+            ];
+
+            let detectedClassroom = '';
+            let detectedTrack = 'ไม่ระบุสาขา';
+
+            const match = rawText.match(slashClassRegex);
+            if (match) {
+                // Check if vocational or high school context
+                let prefix = 'ม.';
+                if (rawText.includes('ปวช')) prefix = 'ปวช.';
+                else if (rawText.includes('ปวส')) prefix = 'ปวส.';
+
+                detectedClassroom = `${prefix}${match[1]}/${match[2]}`;
+            } else {
+                // Fallback default format if not explicitly found in OCR
+                detectedClassroom = 'ม.4/6'; 
+            }
+
+            // Detect Track
+            for (let item of trackKeywords) {
+                if (rawText.includes(item.keyword)) {
+                    detectedTrack = item.label;
+                    break;
+                }
+            }
+            if (detectedTrack === 'ไม่ระบุสาขา' && detectedClassroom.startsWith('ม.')) {
+                detectedTrack = 'วิทย์-คณิต'; // Default demo track for high school
+            }
+
+            // Extract Subjects Simple Tokenizer
+            const potentialSubjects = ['คณิตศาสตร์', 'วิทยาศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'วงจรอิเล็กทรอนิกส์', 'การเขียนโปรแกรม'];
+            let foundSubjects = potentialSubjects.filter(sub => rawText.includes(sub));
+            if (foundSubjects.length === 0) {
+                foundSubjects = ['คณิตศาสตร์ เพิ่มเติม', 'ฟิสิกส์ 2', 'ภาษาอังกฤษเพื่อการสื่อสาร', 'เคมีวิเคราะห์'];
+            }
+
+            // Save to State
+            appState.classroom = detectedClassroom;
+            appState.track = detectedTrack;
+            appState.subjectsFound = foundSubjects;
+            saveStateToStorage();
+
+            // Render UI Updates
+            renderClassroomInfo();
+            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+            showMotivation('🎉', 'ตรวจพบชั้นเรียนแล้ว!', `ตรวจพบ ${detectedClassroom} (${detectedTrack}) พร้อมดึงข้อมูลรายวิชาเรียบร้อย`);
+        }
+
+        function renderClassroomInfo() {
+            const classDisplay = document.getElementById('classroom-display');
+            const subtextDisplay = document.getElementById('classroom-subtext');
+            const slashClassText = document.getElementById('ocr-result-slash-class');
+            const trackText = document.getElementById('ocr-result-track');
+            const subjectsContainer = document.getElementById('schedule-subjects-list');
+            const dotBadge = document.getElementById('ocr-status-dot');
+
+            if (appState.classroom && appState.classroom !== 'ยังไม่สแกนตาราง') {
+                classDisplay.innerHTML = `<i class="fa-solid fa-graduation-cap text-lg dyn-accent-text"></i> <span>${appState.classroom}</span>`;
+                subtextDisplay.textContent = `แผนการเรียน/สาขา: ${appState.track}`;
+                slashClassText.innerHTML = `ตรวจพบ: <span class="dyn-accent-text font-bold text-base">${appState.classroom}</span>`;
+                trackText.innerHTML = `แผนการเรียน / สาขา: <span class="font-bold dyn-text-primary">${appState.track}</span>`;
+                
+                if (dotBadge) {
+                    dotBadge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700";
+                    dotBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span> ยืนยันแล้ว`;
+                }
+
+                if (appState.subjectsFound.length > 0) {
+                    subjectsContainer.innerHTML = appState.subjectsFound.map(s => 
+                        `<span class="px-2.5 py-1 rounded-xl glass-card text-xs font-semibold dyn-text-primary border dyn-border">${s}</span>`
+                    ).join('');
+                }
+            } else {
+                classDisplay.innerHTML = `<i class="fa-solid fa-school text-lg dyn-accent-text"></i> <span>ยังไม่สแกนตาราง</span>`;
+                subtextDisplay.textContent = 'อัปโหลดตารางเรียนเพื่อตรวจจับระบบ "ทับ"';
+                slashClassText.innerHTML = `ตรวจพบ: <span class="dyn-accent-text font-bold">ยังไม่มีข้อมูล</span>`;
+                trackText.innerHTML = `แผนการเรียน / สาขา: <span class="font-medium">-</span>`;
+                subjectsContainer.innerHTML = `<span class="text-xs dyn-text-muted font-italic">อัปโหลดรูปภาพเพื่อดูรายชื่อวิชา</span>`;
+            }
+        }
+
+        function clearSchedule() {
+            appState.classroom = 'ยังไม่สแกนตาราง';
+            appState.track = '-';
+            appState.subjectsFound = [];
+            saveStateToStorage();
+            renderClassroomInfo();
+            showMotivation('🗑️', 'ล้างข้อมูลตารางเรียนแล้ว', 'คุณสามารถอัปโหลดรูปภาพตารางเรียนใหม่ได้ทุกเมื่อค่ะ');
+        }
+
+        // -------------------------------------------------------------
+        // SAVINGS GOAL TRACKER
+        // -------------------------------------------------------------
+        function updateSavingsUI() {
+            const { title, current, target } = appState.savings;
+            const percent = Math.min(100, Math.round((current / target) * 100)) || 0;
+            const remaining = Math.max(0, target - current);
+
+            document.getElementById('savings-title-display').textContent = title;
+            document.getElementById('savings-current-text').textContent = `฿${current.toLocaleString()}`;
+            document.getElementById('savings-target-text').textContent = `฿${target.toLocaleString()}`;
+            document.getElementById('savings-progress-bar').style.width = `${percent}%`;
+            document.getElementById('savings-percent-text').textContent = `${percent}% สำเร็จ`;
+            document.getElementById('savings-remaining-text').textContent = `เหลือ ฿${remaining.toLocaleString()}`;
+        }
+
+        function openAddSavingsModal() {
+            document.getElementById('savings-amount-input').value = '';
+            document.getElementById('add-savings-modal').classList.remove('hidden');
+        }
+        function closeAddSavingsModal() {
+            document.getElementById('add-savings-modal').classList.add('hidden');
+        }
+        function quickAddSavings(val) {
+            document.getElementById('savings-amount-input').value = val;
+        }
+        function confirmAddSavings() {
+            const val = parseFloat(document.getElementById('savings-amount-input').value);
+            if (val && val > 0) {
+                appState.savings.current += val;
+                saveStateToStorage();
+                updateSavingsUI();
+                closeAddSavingsModal();
+                confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+                showMotivation('💰', 'ออมเงินสำเร็จ!', `ยอดสะสมเพิ่มขึ้น ฿${val} ขอให้ออมเงินอย่างสม่ำเสมอนะคะ`);
+            }
+        }
+
+        function openEditGoalModal() {
+            document.getElementById('goal-title-input').value = appState.savings.title;
+            document.getElementById('goal-target-input').value = appState.savings.target;
+            document.getElementById('edit-goal-modal').classList.remove('hidden');
+        }
+        function closeEditGoalModal() {
+            document.getElementById('edit-goal-modal').classList.add('hidden');
+        }
+        function confirmEditGoal() {
+            const title = document.getElementById('goal-title-input').value.trim();
+            const target = parseFloat(document.getElementById('goal-target-input').value);
+            if (title && target > 0) {
+                appState.savings.title = title;
+                appState.savings.target = target;
+                saveStateToStorage();
+                updateSavingsUI();
+                closeEditGoalModal();
+                showMotivation('🎯', 'อัปเดตเป้าหมายแล้ว', `เปลี่ยนเป้าหมายเป็น "${title}" ยอดเป้าหมาย ฿${target.toLocaleString()}`);
+            }
+        }
+
+        function resetSavingsConfirm() {
+            if (confirm("คุณต้องการรีเซ็ตยอดเงินออมเป็น 0 บาทใช่หรือไม่?")) {
+                appState.savings.current = 0;
+                saveStateToStorage();
+                updateSavingsUI();
+                showMotivation('🔄', 'รีเซ็ตยอดออมแล้ว', 'เริ่มต้นการออมใหม่อีกครั้ง สู้ๆ นะ!');
+            }
+        }
+
+        // -------------------------------------------------------------
+        // DAILY LOGS & AI MOTIVATION MODAL
+        // -------------------------------------------------------------
+        function recordDailyLog(key, emoji, msg) {
+            const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            appState.dailyLogs[key] = timeStr;
+            saveStateToStorage();
+            updateDailyLogUI();
+            showMotivation(emoji, `บันทึกกิจกรรม "${key}"`, msg);
+        }
+
+        function updateDailyLogUI() {
+            const keys = ['ตื่นนอน', 'ถึงสถาบัน', 'ถึงที่พัก', 'เข้านอน'];
+            let doneCount = 0;
+
+            keys.forEach(k => {
+                const time = appState.dailyLogs[k];
+                const btn = document.getElementById(`btn-log-${k}`);
+                const timeElem = document.getElementById(`time-${k}`);
+
+                if (time) {
+                    doneCount++;
+                    if (timeElem) timeElem.textContent = `เช็กเมื่อ ${time} น.`;
+                    if (btn) btn.classList.add('ring-2', 'ring-pink-400');
+                } else {
+                    if (timeElem) timeElem.textContent = 'ยังไม่ได้เช็ก';
+                    if (btn) btn.classList.remove('ring-2', 'ring-pink-400');
+                }
+            });
+
+            document.getElementById('log-count-badge').textContent = `ทำแล้ว ${doneCount}/4 กิจกรรม`;
+        }
+
+        function handleActivityImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } });
+                showMotivation('📸', 'อัปโหลดภาพกิจกรรมแล้ว!', 'รูปภาพสวยงามมาก! ขอให้มีความสุขกับทุกช่วงเวลาในวันนี้นะคะ ✨');
+            }
+        }
+
+        function showMotivation(emoji, title, body) {
+            document.getElementById('ai-modal-emoji').textContent = emoji;
+            document.getElementById('ai-modal-title').textContent = title;
+            document.getElementById('ai-modal-body').textContent = body;
+            document.getElementById('motivation-modal').classList.remove('hidden');
+        }
+
+        function closeMotivationModal() {
+            document.getElementById('motivation-modal').classList.add('hidden');
+        }
+
+        function rotateMotivationalQuote() {
+            const randomIndex = Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length);
+            const item = MOTIVATIONAL_QUOTES[randomIndex];
+            document.getElementById('bubble-emoji').textContent = item.emoji;
+            document.getElementById('bubble-quote-text').textContent = `"${item.quote}"`;
+        }
+    </script>
 </body>
 </html>
