@@ -103,7 +103,7 @@
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
       <button type="button" onclick="quickSelect('🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก</button>
+      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 กลับถึงที่พัก</button>
       <button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
     </div>
 
@@ -306,6 +306,7 @@
 
           let detectedClass = "";
 
+          // 🛠️ ตรวจสอบสายอาชีวะ (ช่างทุกแผนก / ปวช. / ปวส.)
           if (fn.includes('ปวช.3') || fn.includes('ปวช3') || fn.includes('ชอ.3')) {
             detectedClass = "ปวช.3 ช่างอิเล็กทรอนิกส์";
           } else if (fn.includes('ปวช.2') || fn.includes('ปวช2') || fn.includes('ชอ.2')) {
@@ -318,23 +319,28 @@
             detectedClass = "ปวช. ช่างยนต์";
           } else if (fn.includes('ปวส')) {
             detectedClass = "ปวส. เทคโนโลยีอิเล็กทรอนิกส์";
-          } else if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) {
-            detectedClass = "ม.6 วิทย์-คณิต";
-          } else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) {
-            detectedClass = "ม.5 วิทย์-คณิต";
-          } else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) {
-            if (fn.includes('ฝรั่งเศส') || fn.includes('จีน') || fn.includes('ญี่ปุ่น') || fn.includes('เกาหลี') || fn.includes('อ3') || fn.includes('ต3')) {
-              detectedClass = "ม.4 ศิลป์-ภาษา";
-            } else if (fn.includes('คณิตเพิ่มเติม') || (fn.includes('ค3') && !fn.includes('ว3'))) {
-              detectedClass = "ม.4 ศิลป์-คำนวณ";
+          } 
+          // 📚 ตรวจสอบสายสามัญ (ม.4, ม.5, ม.6)
+          else {
+            let levelPrefix = "";
+            if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
+            else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
+            else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) levelPrefix = "ม.4";
+
+            if (levelPrefix) {
+              // เช็กถ้าเป็นสายวิทย์-คณิต (มีวิชา ฟิสิกส์ เคมี ชีววิทยา หรือรหัส ว3 ร่วมกับ ค3)
+              if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) {
+                detectedClass = `${levelPrefix} วิทย์-คณิต`;
+              } else {
+                // หากเป็นกลุ่มสายศิลป์ (ภาษาต่างประเทศ ภาษาไทย สังคม หรือคณิตเพิ่มเติม) รวมเป็น "ศิลป์-คำนวณ หรือ ภาษา"
+                detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
+              }
             } else {
-              detectedClass = "ม.4 วิทย์-คณิต";
+              document.getElementById('scheduleStatus').innerText = "⚠️ ไม่สามารถระบุชั้น/แผนกได้ กรุณาอัปโหลดใหม่";
+              document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
+              showModal(`⚠️ ไม่สามารถวิเคราะห์ระดับชั้นได้!\n\nAI อ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้นหรือรหัสวิชาที่ตรงกับเงื่อนไข\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีข้อความชัดเจนใหม่อีกครั้งครับ`);
+              return;
             }
-          } else {
-            document.getElementById('scheduleStatus').innerText = "⚠️ ไม่สามารถระบุชั้น/แผนกได้ กรุณาอัปโหลดใหม่";
-            document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
-            showModal(`⚠️ ไม่สามารถวิเคราะห์ระดับชั้นได้!\n\nAI อ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้นหรือรหัสวิชาที่ตรงกับเงื่อนไข\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีข้อความชัดเจนใหม่อีกครั้งครับ`);
-            return;
           }
 
           studentClass = detectedClass;
