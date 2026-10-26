@@ -349,7 +349,7 @@
       }, delay);
     }
 
-    // 🧠 ระบบ AI OCR สแกนตารางเรียน แยกสายอาชีวะกับสายสามัญแบบเด็ดขาด 100%
+    // 🧠 ระบบ AI OCR สแกนตารางเรียน พร้อมระบบตรวจจับความผิดพลาดเมื่อไม่พบข้อความหรือข้อมูล
     document.getElementById('scheduleInput').addEventListener('change', async function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
@@ -365,6 +365,7 @@
           const extractedText = ret.data.text.trim();
           const fn = (file.name + " " + extractedText).toLowerCase();
 
+          // ❌ ระบบตรวจจับความผิดพลาด: หากไม่พบตัวอักษรใดๆ หรือข้อความน้อยเกินไป
           if (!extractedText || extractedText.length < 5) {
             document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบตัวอักษรใดๆ ในรูปภาพ กรุณาอัปโหลดใหม่";
             document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
@@ -374,7 +375,7 @@
 
           let detectedClass = "";
 
-          // 🛠️ เช็กสายอาชีวะ (ช่าง / พาณิชย์ / คหกรรม / ท่องเที่ยว / ดิจิทัล) เป็นอันดับแรกสุดเด็ดขาด
+          // 🛠️ เช็กสายอาชีวะ (ช่าง / พาณิชย์ / คหกรรม / ท่องเที่ยว / ดิจิทัล)
           let isVocational = fn.includes('ปวช') || fn.includes('ปวส') || fn.includes('ชอ.') || fn.includes('ชอ') || fn.includes('ชฟ') || fn.includes('ชย') || fn.includes('ชก') || fn.includes('elec') || fn.includes('อิเล็ก') || fn.includes('บัญชี') || fn.includes('การตลาด') || fn.includes('ท่องเที่ยว') || fn.includes('ดิจิทัล') || fn.includes('อาหาร') || fn.includes('ยานยนต์') || fn.includes('เครื่องกล') || fn.includes('เชื่อม') || fn.includes('ก่อสร้าง') || fn.includes('เมคคา');
 
           if (isVocational) {
@@ -385,7 +386,6 @@
             else if (fn.includes('ปวส.2') || fn.includes('ปวส2')) vocLevel = "ปวส.2";
             else if (fn.includes('ปวส.1') || fn.includes('ปวส1') || fn.includes('ปวส')) vocLevel = "ปวส.1";
 
-            // แยกสาขาอาชีวะ
             if (fn.includes('ยานยนต์ไฟฟ้า') || fn.includes('เทคนิคยานยนต์')) detectedClass = `${vocLevel} เทคนิคยานยนต์ไฟฟ้า`;
             else if (fn.includes('เครื่องกล') || fn.includes('ชย')) detectedClass = `${vocLevel} เทคนิคเครื่องกล / ช่างยนต์`;
             else if (fn.includes('ช่างยนต์')) detectedClass = `${vocLevel} ช่างยนต์`;
@@ -414,12 +414,19 @@
             if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
             else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
             else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) levelPrefix = "ม.4";
-            else levelPrefix = "ม.4"; // ค่าเริ่มต้นสายสามัญ
 
-            if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) {
-              detectedClass = `${levelPrefix} วิทย์-คณิต`;
+            if (levelPrefix) {
+              if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) {
+                detectedClass = `${levelPrefix} วิทย์-คณิต`;
+              } else {
+                detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
+              }
             } else {
-              detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
+              // ❌ ระบบตรวจจับข้อผิดพลาด: หากอ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้นหรือแผนกที่ตรงกับเงื่อนไข
+              document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนก กรุณาอัปโหลดใหม่";
+              document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
+              showModal(`⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนกวิชาในรูปภาพ!\n\nAI อ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้น (ม.4-6, ปวช., ปวส.) หรือชื่อแผนกที่ถูกต้อง\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีข้อความชัดเจนใหม่อีกครั้งครับ!`);
+              return;
             }
           }
 
@@ -546,4 +553,3 @@
   </script>
 </body>
 </html>
-
