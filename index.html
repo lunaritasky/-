@@ -35,15 +35,21 @@
 
   <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10 my-auto">
     
-    <!-- ส่วนหัว (แสดงชื่อผู้ใช้และระดับชั้น) -->
+    <!-- ส่วนหัว (แสดงชื่อผู้ใช้ ระดับชั้น และปุ่มรีเฟรชหน้าเว็บ) -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-cyan-400">📱 Student Tracker</h1>
         <p id="displayUserName" class="text-xs text-gray-300 mt-0.5">ยินดีต้อนรับครับ</p>
       </div>
-      <span id="displayStudentClass" class="text-xs bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30">
-        ยังไม่ได้อัปโหลดตาราง
-      </span>
+      <div class="flex items-center gap-2">
+        <span id="displayStudentClass" class="text-xs bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30">
+          ยังไม่ได้อัปโหลดตาราง
+        </span>
+        <!-- 🔄 ปุ่มรีเฟรชหน้าเว็บ (รีเฟรชเฉพาะเว็บ ไม่ลบข้อมูล) -->
+        <button type="button" onclick="refreshPage()" class="bg-gray-700 hover:bg-gray-600 text-cyan-400 p-1.5 rounded-full border border-cyan-500/30 transition active:scale-90 cursor-pointer" title="รีเฟรชหน้าเว็บ">
+          🔄
+        </button>
+      </div>
     </div>
 
     <!-- 🫧 เมนูตั้งค่ารูปฟองสบู่ -->
@@ -103,7 +109,7 @@
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="quickSelect('🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน</button>
       <button type="button" onclick="quickSelect('🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน</button>
-      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 กลับถึงที่พัก</button>
+      <button type="button" onclick="quickSelect('🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก</button>
       <button type="button" onclick="quickSelect('🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน</button>
     </div>
 
@@ -224,6 +230,11 @@
       document.getElementById('displayUserName').innerText = `ผู้ใช้งาน: ${userName} (${nameType === 'เล่น' ? 'ชื่อเล่น' : 'ชื่อจริง'})`;
     }
 
+    // 🔄 ฟังก์ชันรีเฟรชหน้าเว็บ (รีโหลดหน้าจอเว็บโดยไม่ลบข้อมูลใน LocalStorage)
+    function refreshPage() {
+      window.location.reload();
+    }
+
     function saveUserIdentity() {
       const nameInput = document.getElementById('inputName').value.trim();
       const typeInput = document.getElementById('selectNameType').value;
@@ -306,7 +317,6 @@
 
           let detectedClass = "";
 
-          // 🛠️ ตรวจสอบสายอาชีวะ (ช่างทุกแผนก / ปวช. / ปวส.)
           if (fn.includes('ปวช.3') || fn.includes('ปวช3') || fn.includes('ชอ.3')) {
             detectedClass = "ปวช.3 ช่างอิเล็กทรอนิกส์";
           } else if (fn.includes('ปวช.2') || fn.includes('ปวช2') || fn.includes('ชอ.2')) {
@@ -319,20 +329,16 @@
             detectedClass = "ปวช. ช่างยนต์";
           } else if (fn.includes('ปวส')) {
             detectedClass = "ปวส. เทคโนโลยีอิเล็กทรอนิกส์";
-          } 
-          // 📚 ตรวจสอบสายสามัญ (ม.4, ม.5, ม.6)
-          else {
+          } else {
             let levelPrefix = "";
             if (fn.includes('ม.6') || fn.includes('ม6') || fn.includes('m.6')) levelPrefix = "ม.6";
             else if (fn.includes('ม.5') || fn.includes('ม5') || fn.includes('m.5')) levelPrefix = "ม.5";
             else if (fn.includes('ม.4') || fn.includes('ม4') || fn.includes('m.4') || fn.includes('31')) levelPrefix = "ม.4";
 
             if (levelPrefix) {
-              // เช็กถ้าเป็นสายวิทย์-คณิต (มีวิชา ฟิสิกส์ เคมี ชีววิทยา หรือรหัส ว3 ร่วมกับ ค3)
               if (fn.includes('ฟิสิกส์') || fn.includes('เคมี') || fn.includes('ชีว') || (fn.includes('ว3') && fn.includes('ค3'))) {
                 detectedClass = `${levelPrefix} วิทย์-คณิต`;
               } else {
-                // หากเป็นกลุ่มสายศิลป์ (ภาษาต่างประเทศ ภาษาไทย สังคม หรือคณิตเพิ่มเติม) รวมเป็น "ศิลป์-คำนวณ หรือ ภาษา"
                 detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
               }
             } else {
