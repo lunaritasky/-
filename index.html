@@ -69,6 +69,17 @@
       </div>
     </div>
 
+    <!-- 🖼️ เมนูระบบดูรูปย้อนหลังประจำวัน (รีเซตอัตโนมัติ 05:30 น.) -->
+    <div class="p-3 bg-gray-750 rounded-xl border border-purple-500/30 space-y-2">
+      <div class="flex justify-between items-center">
+        <label class="block text-xs font-semibold text-purple-400">🖼️ รูปถ่ายย้อนหลังประจำวัน:</label>
+        <span id="historyCount" class="text-[10px] text-gray-400">0 รูป</span>
+      </div>
+      <div id="historyGallery" class="flex gap-2 overflow-x-auto py-1 min-h-[50px] items-center">
+        <span class="text-[11px] text-gray-500 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรูปรายงานเพื่อบันทึก)</span>
+      </div>
+    </div>
+
     <!-- 🫧 เมนูตั้งค่ารูปฟองสบู่ -->
     <div class="p-3 bg-gray-750 rounded-xl border border-pink-500/30 space-y-2">
       <label class="block text-xs font-semibold text-pink-400 mb-1">🫧 ตั้งค่ารูปฟองสบู่ลอย (เช่น รูปแฟน / กำลังใจ):</label>
@@ -122,7 +133,7 @@
       <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
-    <!-- ปุ่มบันทึกด่วน (Quick Log พร้อมระบบล็อคห้ามย้อนกลับ) -->
+    <!-- ปุ่มบันทึกด่วน (Quick Log พร้อมระบบล็อคสเตจ) -->
     <div class="grid grid-cols-2 gap-2">
       <button type="button" onclick="handleStageLog(1, '🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน (1/4)</button>
       <button type="button" onclick="handleStageLog(2, '🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน (2/4)</button>
@@ -236,6 +247,7 @@
 
       updateProgressUI();
       updateStageUI();
+      loadPhotoHistory();
 
       if (savedBubbleImg) {
         setupFloatingBubbles();
@@ -247,6 +259,7 @@
       }
     };
 
+    // ⏰ ตรวจสอบเวลา รีเซตสเตจ และล้างรูปถ่ายย้อนหลังอัตโนมัติทุกๆ ตี 5:30 น.
     function checkAndResetDailyAt530() {
       const now = new Date();
       const currentHour = now.getHours();
@@ -260,6 +273,7 @@
       if (lastResetDate !== todayStr && currentTimeInMinutes >= resetTimeInMinutes) {
         currentStage = 0;
         localStorage.setItem('current_stage', 0);
+        localStorage.removeItem('daily_photo_history'); // ล้างรูปถ่ายย้อนหลัง
         localStorage.setItem('last_reset_date', todayStr);
       }
     }
@@ -278,7 +292,7 @@
       if (isBypassActive) {
         btn.innerText = "🔓 บายพาส: เปิด";
         btn.className = "text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer";
-        showModal(`🔓 เปิดโหมดบายพาสสำเร็จ!\n\nคุณสามารถกดเลือกสเตจภารกิจได้อย่างอิสระชั่วคราว`);
+        showModal(`🔓 เปิดโหมดบายพาสสำเร็จ!\n\nคุณสามารถเลือกสเตจภารกิจได้อย่างอิสระชั่วคราว`);
       } else {
         btn.innerText = "🔒 บายพาส: ปิด";
         btn.className = "text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer";
@@ -297,15 +311,13 @@
       document.getElementById('displayStageText').innerText = stageText;
     }
 
-    // 🔒 ระบบล็อคสเตจ: ห้ามย้อนกลับเด็ดขาด เว้นแต่เปิดบายพาส
+    // 🔒 ระบบล็อคสเตจ ห้ามย้อนกลับ
     function handleStageLog(stageNum, actionText) {
       if (!isBypassActive) {
-        // ห้ามกดสเตจถอยหลัง (เช่น อยู่ Stage 2 แล้วกด Stage 1)
         if (stageNum <= currentStage) {
-          showModal(`⚠️ ไม่สามารถทำสเตจย้อนหลังได้!\n\nคุณได้ผ่าน Stage นี้ไปแล้วหรืออยู่ในสเตจปัจจุบันแล้ว ระบบไม่อนุญาตให้ย้อนกลับเพื่อรักษาความมีวินัยครับ! 🛡️`);
+          showModal(`⚠️ ไม่สามารถทำสเตจย้อนหลังได้!\n\nคุณได้ผ่าน Stage นี้ไปแล้วหรืออยู่ในสเตจปัจจุบันแล้ว ระบบไม่อนุญาตให้ย้อนกลับครับ! 🛡️`);
           return;
         }
-        // ห้ามกดข้ามสเตจ (เช่น อยู่ Stage 0 แล้วกด Stage 2 ทันที)
         if (stageNum > currentStage + 1) {
           showModal(`⚠️ ไม่สามารถข้ามสเตจได้!\n\nกรุณาทำภารกิจตามลำดับทีละขั้น หรือกดปุ่ม 🔓 บายพาส ที่มุมขวาเพื่อปลดล็อคชั่วคราวครับ!`);
           return;
@@ -322,7 +334,33 @@
 
       let encouragement = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
       
-      showModal(`📌 บันทึกสเตจสำเร็จ!\n\n- 🎯 ภารกิจ: ${actionText}\n- 📊 สเตจปัจจุบัน: Stage ${currentStage}/4 (ล็อคไม่ให้ย้อนกลับ)\n\n${encouragement}`);
+      showModal(`📌 บันทึกสเตจสำเร็จ!\n\n- 🎯 ภารกิจ: ${actionText}\n- 📊 สเตจปัจจุบัน: Stage ${currentStage}/4\n\n${encouragement}`);
+    }
+
+    // 🖼️ โหลดและแสดงรูปถ่ายย้อนหลังประจำวัน
+    function loadPhotoHistory() {
+      const historyGallery = document.getElementById('historyGallery');
+      const historyCount = document.getElementById('historyCount');
+      let historyData = JSON.parse(localStorage.getItem('daily_photo_history')) || [];
+
+      if (historyData.length === 0) {
+        historyGallery.innerHTML = `<span class="text-[11px] text-gray-500 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรูปรายงานเพื่อบันทึก)</span>`;
+        historyCount.innerText = `0 รูป`;
+        return;
+      }
+
+      historyGallery.innerHTML = '';
+      historyCount.innerText = `${historyData.length} รูป`;
+
+      historyData.forEach((imgBase64, index) => {
+        const imgThumb = document.createElement('div');
+        imgThumb.className = "w-12 h-12 rounded-lg border border-purple-500/40 overflow-hidden bg-gray-900 cursor-pointer shrink-0 shadow-sm hover:scale-105 transition";
+        imgThumb.innerHTML = `<img src="${imgBase64}" class="w-full h-full object-cover" title="แตะเพื่อดูรูปใหญ่">`;
+        imgThumb.onclick = function() {
+          showModal(`🖼️ รูปถ่ายย้อนหลัง (รูปที่ ${index + 1}):\n\n<img src="${imgBase64}" class="w-full rounded-xl mt-2 border border-purple-500/30">`);
+        };
+        historyGallery.appendChild(imgThumb);
+      });
     }
 
     function saveUserIdentity() {
@@ -512,7 +550,7 @@
     }
 
     function showModal(message) {
-      document.getElementById('modalMessage').innerText = message;
+      document.getElementById('modalMessage').innerHTML = message;
       document.getElementById('customModal').classList.remove('hidden');
     }
 
@@ -559,6 +597,7 @@
       showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับคุณ ${userName} อีกนิดเดียวก็ถึงเป้าหมายแล้ว!`);
     }
 
+    // 📸 บันทึกรายงานประจำวัน และเก็บรูปเข้าประวัติย้อนหลัง
     function handleFormSubmit(event) {
       event.preventDefault();
       const note = document.getElementById('userNote').value;
@@ -569,9 +608,22 @@
         return;
       }
 
+      if (imageInput.files.length > 0) {
+        const file = imageInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const base64Img = event.target.result;
+          let historyData = JSON.parse(localStorage.getItem('daily_photo_history')) || [];
+          historyData.push(base64Img);
+          localStorage.setItem('daily_photo_history', JSON.stringify(historyData));
+          loadPhotoHistory();
+        };
+        reader.readAsDataURL(file);
+      }
+
       let encouragement = `💖 เก่งมากครับคุณ ${userName}! วันนี้มีความตั้งใจและมีวินัยสุดๆ ขอให้เป็นวันที่ราบรื่นและมีความสุข พักผ่อนเยอะๆ นะครับ!`;
       if (imageInput.files.length > 0) {
-        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้เต็มไปด้วยพลังบวกและความตั้งใจดีๆ เลยครับ บันทึกความทรงจำและวินัยยอดเยี่ยมแบบนี้ไว้เยี่ยมเลย สู้ๆ ครับ คนเก่ง!`;
+        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปนี้ถูกบันทึกใน "รูปถ่ายย้อนหลังประจำวัน" เรียบร้อยแล้วครับ สู้ๆ ครับ คนเก่ง!`;
       }
 
       let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- สเตจภารกิจ: Stage ${currentStage}/4\n- ระดับชั้นและแผนก: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
