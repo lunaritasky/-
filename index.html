@@ -3,121 +3,259 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Student & Savings Tracker</title>
+  <title>Daily Student & Savings Tracker 💖</title>
+  <!-- Tailwind CSS & Google Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tesseract.js (AI OCR) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- Firebase Modular SDK v10 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 🔑 Firebase Config ของคุณ
+    const firebaseConfig = {
+      apiKey: "AIzaSyCjesvWHrDuKtYAyf-HV1hIEet9b3nIdZQ",
+      authDomain: "student-tracker-6ed6b.firebaseapp.com",
+      projectId: "student-tracker-6ed6b",
+      storageBucket: "student-tracker-6ed6b.firebasestorage.app",
+      messagingSenderId: "34723571239",
+      appId: "1:34723571239:web:f3b297e87372a24f115002",
+      measurementId: "G-2FT4GP8H2J"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    // Global App State Variables
+    window.currentUser = null;
+    window.userAppData = {
+      studentClass: "",
+      scheduleName: "",
+      currentSavings: 0,
+      targetAmount: 6000,
+      goalTitle: "เก็บเงินซื้อของ 🎀",
+      currentStage: 0,
+      lastResetDate: "",
+      bubblePhoto: "",
+      dailyPhotos: []
+    };
+
+    // ⏰ ตรวจสอบและรีเซตสเตจ + ล้างรูปย้อนหลังตอน 05:30 น.
+    function checkAndResetDailyAt530() {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const todayStr = now.toDateString();
+      const currentTimeInMinutes = currentHour * 60 + currentMinute;
+      const resetTimeInMinutes = 5 * 60 + 30; // 05:30 AM
+
+      if (window.userAppData.lastResetDate !== todayStr && currentTimeInMinutes >= resetTimeInMinutes) {
+        window.userAppData.currentStage = 0;
+        window.userAppData.dailyPhotos = [];
+        window.userAppData.lastResetDate = todayStr;
+        syncDataToCloud();
+      }
+    }
+
+    // ☁️ โหลดข้อมูลผู้ใช้จาก Firestore
+    async function loadUserData(uid) {
+      const docRef = doc(db, "users", uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        window.userAppData = { ...window.userAppData, ...docSnap.data() };
+      } else {
+        await setDoc(docRef, window.userAppData);
+      }
+
+      checkAndResetDailyAt530();
+      updateAllUI();
+    }
+
+    // ☁️ ซิงค์บันทึกข้อมูลขึ้น Cloud Firestore
+    window.syncDataToCloud = async function() {
+      if (!window.currentUser) return;
+      try {
+        const docRef = doc(db, "users", window.currentUser.uid);
+        await setDoc(docRef, window.userAppData, { merge: true });
+      } catch (err) {
+        console.error("Cloud Sync Error:", err);
+      }
+    };
+
+    // 🔐 ตรวจสอบสถานะการล็อกอิน Google
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.currentUser = user;
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('userProfileImg').src = user.photoURL || "https://via.placeholder.com/40";
+        document.getElementById('displayUserName').innerText = `${user.displayName} ✨`;
+        loadUserData(user.uid);
+      } else {
+        window.currentUser = null;
+        document.getElementById('loginOverlay').classList.remove('hidden');
+      }
+    });
+
+    // 🚀 ปุ่มกดล็อกอิน Google
+    window.loginWithGoogle = function() {
+      signInWithPopup(auth, provider).catch((error) => {
+        alert("เกิดข้อผิดพลาดในการล็อกอิน: " + error.message);
+      });
+    };
+
+    // 🚪 ปุ่มออกจากระบบ
+    window.logoutGoogle = function() {
+      signOut(auth).then(() => {
+        window.location.reload();
+      });
+    };
+  </script>
+
   <style>
-    /* 📱 ตั้งค่าหน้าเว็บให้เลื่อนขึ้นลงได้สมบูรณ์บน iPad / มือถือ */
     html, body {
       font-family: 'Prompt', sans-serif;
       height: 100%;
       overflow-y: auto !important;
       -webkit-overflow-scrolling: touch;
+      background: linear-gradient(135deg, #181119 0%, #2a1226 50%, #1a0b18 100%);
     }
     
-    /* 🫧 อนิเมชั่นฟองสบู่ลอยขึ้นไปแล้วแตกหายไป */
+    /* 🫧 อนิเมชั่นฟองสบู่ลอยและแตกแบบนุ่มนวล */
     @keyframes floatAndBurst {
       0% { transform: translateY(0px) scale(0.5) rotate(0deg); opacity: 0; }
       15% { opacity: 0.95; transform: translateY(-60px) scale(1.1) rotate(5deg); }
       75% { opacity: 0.95; transform: translateY(-280px) scale(1) rotate(-5deg); }
-      90% { transform: translateY(-340px) scale(1.2) rotate(10deg); opacity: 0.5; }
-      100% { transform: translateY(-360px) scale(0.2) rotate(15deg); opacity: 0; }
+      90% { transform: translateY(-340px) scale(1.25) rotate(10deg); opacity: 0.6; }
+      100% { transform: translateY(-360px) scale(0.1) rotate(15deg); opacity: 0; }
     }
 
     .bubble-burst-anim {
-      animation: floatAndBurst 3s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+      animation: floatAndBurst 3.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
     }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #2a1226; }
+    ::-webkit-scrollbar-thumb { background: #f472b6; border-radius: 10px; }
   </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-4 flex flex-col items-center justify-start relative">
+<body class="text-pink-50 min-h-screen p-4 flex flex-col items-center justify-start relative">
 
-  <!-- 🫧 พื้นที่สุ่มสร้างฟองสบู่ลอยและแตกวนลูปต่อเนื่อง -->
+  <!-- 🫧 พื้นที่สร้างฟองสบู่ลอยวนลูป -->
   <div id="floatingBubblesContainer" class="fixed inset-0 pointer-events-none z-40 overflow-hidden hidden"></div>
 
-  <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700 space-y-4 relative z-10 my-auto">
-    
-    <!-- ส่วนหัว (แสดงชื่อผู้ใช้ ระดับชั้น และปุ่มรีเฟรชหน้าเว็บ) -->
-    <div class="flex items-center justify-between">
+  <!-- 🔐 หน้าจอเข้าสู่ระบบด้วย Google (Overlay) -->
+  <div id="loginOverlay" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-gradient-to-b from-gray-900 to-pink-950 border border-pink-500/40 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
+      <div class="w-20 h-20 bg-pink-500/20 text-pink-400 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner border border-pink-500/30">
+        🎀
+      </div>
       <div>
-        <h1 class="text-xl font-bold text-cyan-400">📱 Student Tracker</h1>
-        <p id="displayUserName" class="text-xs text-gray-300 mt-0.5">ยินดีต้อนรับครับ</p>
+        <h2 class="text-2xl font-bold text-pink-300">Student Tracker</h2>
+        <p class="text-xs text-pink-200/70 mt-1">บันทึกวินัย ตารางเรียน และเป้าหมายเงินออม 💖</p>
+      </div>
+
+      <button onclick="loginWithGoogle()" class="w-full bg-white hover:bg-pink-50 text-gray-800 font-bold py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition transform active:scale-95 border border-pink-200 cursor-pointer">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
+        <span class="text-sm">เข้าสู่ระบบด้วย Google Account</span>
+      </button>
+      <p class="text-[10px] text-pink-300/50">ข้อมูลง่าย ปลอดภัย ซิงค์ตรงกันทุกอุปกรณ์ ☁️</p>
+    </div>
+  </div>
+
+  <!-- 📱 กล่องแอปพลิเคชันหลัก -->
+  <div class="w-full max-w-md bg-gray-900/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-pink-500/30 space-y-4 relative z-10 my-auto">
+    
+    <!-- Header ส่วนหัว -->
+    <div class="flex items-center justify-between pb-2 border-b border-pink-900/40">
+      <div class="flex items-center gap-3">
+        <img id="userProfileImg" src="" class="w-10 h-10 rounded-full border-2 border-pink-400 shadow-md">
+        <div>
+          <h1 class="text-base font-bold text-pink-300 flex items-center gap-1">Student Tracker 🌸</h1>
+          <p id="displayUserName" class="text-xs text-pink-200/80">กำลังโหลดข้อมูล...</p>
+        </div>
       </div>
       <div class="flex items-center gap-2">
-        <span id="displayStudentClass" class="text-xs bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30">
-          ยังไม่ได้อัปโหลดตาราง
-        </span>
-        <!-- 🔄 ปุ่มรีเฟรชหน้าเว็บ -->
-        <button type="button" onclick="refreshPage()" class="bg-gray-700 hover:bg-gray-600 text-cyan-400 p-1.5 rounded-full border border-cyan-500/30 transition active:scale-90 cursor-pointer" title="รีเฟรชหน้าเว็บ">
+        <button type="button" onclick="refreshPage()" class="bg-pink-950 hover:bg-pink-900 text-pink-300 p-2 rounded-full border border-pink-500/30 transition active:scale-90 cursor-pointer" title="รีเฟรชเว็บ">
           🔄
+        </button>
+        <button type="button" onclick="logoutGoogle()" class="bg-red-950/80 hover:bg-red-900 text-red-300 p-2 rounded-full border border-red-500/30 transition active:scale-90 cursor-pointer" title="ออกจากระบบ">
+          🚪
         </button>
       </div>
     </div>
 
-    <!-- 📊 แถบแสดงสเตจภารกิจประจำวัน + ปุ่มบายพาส -->
-    <div class="p-3 bg-gray-750 rounded-xl border border-blue-500/30 space-y-2">
+    <!-- 📊 แถบสเตจภารกิจประจำวัน -->
+    <div class="p-3.5 bg-gradient-to-r from-pink-950/60 to-purple-950/60 rounded-2xl border border-pink-500/30 space-y-2">
       <div class="flex justify-between items-center text-xs">
         <div class="flex items-center gap-2">
-          <span class="font-semibold text-blue-400">📊 สเตจภารกิจวันนี้:</span>
-          <span id="displayStageText" class="font-bold text-cyan-300">Stage 0/4 (ยังไม่เริ่ม)</span>
+          <span class="font-semibold text-pink-300">📊 สเตจภารกิจวันนี้:</span>
+          <span id="displayStageText" class="font-bold text-pink-400">Stage 0/4</span>
         </div>
-        <!-- 🔓 ปุ่มเปิด/ปิดโหมดบายพาส -->
-        <button type="button" id="bypassBtn" onclick="toggleBypass()" class="text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer" title="ปลดล็อคเพื่อข้ามสเตจ">
+        <button type="button" id="bypassBtn" onclick="toggleBypass()" class="text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-0.5 rounded-full transition active:scale-95 cursor-pointer">
           🔒 บายพาส: ปิด
         </button>
       </div>
-      <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-        <div id="stageProgressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+      <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-pink-950">
+        <div id="stageProgressBar" class="bg-gradient-to-r from-pink-500 to-rose-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
       </div>
+      <p id="displayStudentClass" class="text-[11px] text-pink-200/80 font-medium text-center pt-0.5">ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
-    <!-- 🖼️ เมนูระบบดูรูปย้อนหลังประจำวัน (ส่งปุ๊บ เห็นปั๊บ 100%) -->
-    <div class="p-3 bg-gray-750 rounded-xl border border-purple-500/30 space-y-2">
+    <!-- 🖼️ เมนูระบบดูรูปย้อนหลังประจำวัน -->
+    <div class="p-3.5 bg-pink-950/40 rounded-2xl border border-pink-500/20 space-y-2">
       <div class="flex justify-between items-center">
-        <label class="block text-xs font-semibold text-purple-400">🖼️ รูปถ่ายย้อนหลังประจำวัน (ส่งปุ๊บขึ้นปั๊บ):</label>
-        <span id="historyCount" class="text-[10px] text-gray-400">0 รูป</span>
+        <label class="block text-xs font-semibold text-pink-300">🖼️ รูปถ่ายย้อนหลังประจำวัน (ส่งปุ๊บขึ้นปั๊บ):</label>
+        <span id="historyCount" class="text-[10px] text-pink-300/60">0 รูป</span>
       </div>
       <div id="historyGallery" class="flex gap-2 overflow-x-auto py-1 min-h-[55px] items-center">
-        <span class="text-[11px] text-gray-500 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรายงานพร้อมรูปเพื่อบันทึก)</span>
+        <span class="text-[11px] text-pink-300/50 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรายงานพร้อมรูปเพื่อบันทึก)</span>
       </div>
     </div>
 
     <!-- 🫧 เมนูตั้งค่ารูปฟองสบู่ -->
-    <div class="p-3 bg-gray-750 rounded-xl border border-pink-500/30 space-y-2">
-      <label class="block text-xs font-semibold text-pink-400 mb-1">🫧 ตั้งค่ารูปฟองสบู่ลอย (เช่น รูปแฟน / กำลังใจ):</label>
-      <input type="file" id="bubbleImageInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
+    <div class="p-3 bg-pink-950/30 rounded-2xl border border-pink-500/20 space-y-1.5">
+      <label class="block text-xs font-semibold text-pink-300">🫧 ตั้งค่ารูปฟองสบู่ลอย (รูปแฟน / กำลังใจ):</label>
+      <input type="file" id="bubbleImageInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
     </div>
 
     <!-- 💰 เมนูเป้าหมายการเก็บเงิน -->
-    <div class="p-4 bg-gray-750 rounded-xl border border-emerald-500/40 space-y-3">
+    <div class="p-4 bg-gradient-to-b from-pink-950/50 to-gray-900 rounded-2xl border border-pink-500/30 space-y-3">
       <div class="flex justify-between items-center">
-        <h2 id="displayGoalTitle" class="text-sm font-semibold text-emerald-400">🎯 เป้าหมาย: เก็บเงินซื้อของ</h2>
-        <span id="displayGoalProgress" class="text-xs text-gray-300">0 / 6,000 บาท</span>
+        <h2 id="displayGoalTitle" class="text-sm font-semibold text-pink-300">🎯 เป้าหมาย: เก็บเงินซื้อของ 🎀</h2>
+        <span id="displayGoalProgress" class="text-xs text-pink-200/80">0 / 6,000 บาท</span>
       </div>
 
-      <div class="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
-        <div id="progressBar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-pink-900/50">
+        <div id="progressBar" class="bg-gradient-to-r from-emerald-400 to-pink-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
       </div>
 
-      <div class="space-y-2.5 pt-2 border-t border-gray-700">
+      <div class="space-y-2 pt-2 border-t border-pink-900/30">
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[10px] text-gray-400 mb-1">หัวข้อเป้าหมาย:</label>
-            <input type="text" id="goalTitleInput" placeholder="ซื้อเครื่องเกม" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
+            <label class="block text-[10px] text-pink-300/70 mb-1">หัวข้อเป้าหมาย:</label>
+            <input type="text" id="goalTitleInput" placeholder="ซื้อเครื่องเกม" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-500/30 focus:outline-none focus:border-pink-400">
           </div>
           <div>
-            <label class="block text-[10px] text-gray-400 mb-1">เป้าหมายจำนวนเงิน (บาท):</label>
-            <input type="number" id="goalTargetInput" value="6000" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
+            <label class="block text-[10px] text-pink-300/70 mb-1">เป้าหมายจำนวนเงิน (บาท):</label>
+            <input type="number" id="goalTargetInput" value="6000" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-500/30 focus:outline-none focus:border-pink-400">
           </div>
         </div>
 
-        <button type="button" onclick="saveGoalSettings()" class="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-2 rounded-lg transition active:scale-95 cursor-pointer">
+        <button type="button" onclick="saveGoalSettings()" class="w-full bg-pink-700 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded-xl transition active:scale-95 cursor-pointer shadow-md">
           💾 บันทึกตั้งค่าเป้าหมายใหม่
         </button>
 
-        <div class="flex gap-2 pt-1 border-t border-gray-700/60">
-          <input type="number" id="addMoneyInput" placeholder="+ จำนวนเงินที่เก็บเพิ่ม" class="w-full p-2 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-emerald-400">
-          <button type="button" onclick="addSavings()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition active:scale-95 whitespace-nowrap cursor-pointer">
+        <div class="flex gap-2 pt-1 border-t border-pink-900/30">
+          <input type="number" id="addMoneyInput" placeholder="+ จำนวนเงินที่เก็บเพิ่ม" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-500/30 focus:outline-none focus:border-pink-400">
+          <button type="button" onclick="addSavings()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition active:scale-95 whitespace-nowrap cursor-pointer shadow-md">
             ➕ ฝากเงิน
           </button>
         </div>
@@ -125,96 +263,57 @@
     </div>
 
     <!-- 📅 ส่วนอัปเดตตารางเรียน + ปุ่มลบตาราง -->
-    <div class="p-3 bg-gray-750 rounded-xl border border-gray-700 space-y-2">
+    <div class="p-3 bg-pink-950/30 rounded-2xl border border-pink-500/20 space-y-2">
       <div class="flex justify-between items-center">
-        <label class="block text-xs font-semibold text-amber-400">📅 อัปเดตตารางเรียน (AI OCR สแกนตัวหนังสือ):</label>
-        <button type="button" onclick="clearSchedule()" class="text-[10px] bg-red-600/80 hover:bg-red-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer">🗑️ ลบตารางออก</button>
+        <label class="block text-xs font-semibold text-pink-300">📅 อัปเดตตารางเรียน (AI OCR สแกนรูปภาพ):</label>
+        <button type="button" onclick="clearSchedule()" class="text-[10px] bg-rose-800 hover:bg-rose-700 text-white px-2 py-0.5 rounded-lg transition active:scale-95 cursor-pointer">🗑️ ลบออก</button>
       </div>
-
-      <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
-      <p id="scheduleStatus" class="text-[10px] text-gray-400 mt-1">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
+      <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
+      <p id="scheduleStatus" class="text-[10px] text-pink-300/60">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
-    <!-- ปุ่มบันทึกด่วน (Quick Log พร้อมระบบล็อคห้ามย้อนกลับ) -->
+    <!-- ปุ่มบันทึกด่วน (Quick Log) -->
     <div class="grid grid-cols-2 gap-2">
-      <button type="button" onclick="handleStageLog(1, '🌅 ตื่นนอนตอนเช้า')" class="bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌅 ตื่นนอน (1/4)</button>
-      <button type="button" onclick="handleStageLog(2, '🏫 ถึงสถาบันแล้ว')" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏫 ถึงสถาบัน (2/4)</button>
-      <button type="button" onclick="handleStageLog(3, '🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🏠 ถึงที่พัก (3/4)</button>
-      <button type="button" onclick="handleStageLog(4, '🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2 rounded-xl transition active:scale-95 cursor-pointer">🌙 เข้านอน (4/4)</button>
+      <button type="button" onclick="handleStageLog(1, '🌅 ตื่นนอนตอนเช้า')" class="bg-rose-600 hover:bg-rose-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🌅 ตื่นนอน (1/4)</button>
+      <button type="button" onclick="handleStageLog(2, '🏫 ถึงสถาบันแล้ว')" class="bg-pink-600 hover:bg-pink-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🏫 ถึงสถาบัน (2/4)</button>
+      <button type="button" onclick="handleStageLog(3, '🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🏠 ถึงที่พัก (3/4)</button>
+      <button type="button" onclick="handleStageLog(4, '🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🌙 เข้านอน (4/4)</button>
     </div>
 
     <!-- ฟอร์มรายงานประจำวัน -->
     <form id="reportForm" onsubmit="handleFormSubmit(event)" class="space-y-3">
       <div>
-        <label class="block text-xs font-medium text-gray-300 mb-1">📷 รูปภาพกิจกรรมประจำวัน (พร้อมรับพลังใจจาก AI):</label>
-        <input type="file" id="imageInput" accept="image/*" class="w-full text-xs text-gray-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-500 cursor-pointer">
+        <label class="block text-xs font-medium text-pink-200/90 mb-1">📷 รูปภาพกิจกรรมประจำวัน:</label>
+        <input type="file" id="imageInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
       </div>
 
       <div>
-        <label class="block text-xs font-medium text-gray-300 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 placeholder-gray-500" placeholder="เช่น ตั้งใจเรียนวิชาหลักเรียบร้อย..."></textarea>
+        <label class="block text-xs font-medium text-pink-200/90 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
+        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-2xl bg-gray-800 text-pink-50 border border-pink-500/30 focus:outline-none focus:border-pink-400 placeholder-pink-300/30" placeholder="เช่น ตั้งใจเรียนวิชาหลักเรียบร้อย..."></textarea>
       </div>
 
-      <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 font-bold py-2.5 rounded-xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
+      <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-bold py-3 rounded-2xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
         🚀 ส่งรายงานและรับพลังใจด้วย AI
       </button>
     </form>
 
   </div>
 
-  <!-- ✨ ป๊อปอัพตั้งค่าชื่อผู้ใช้ -->
-  <div id="setupModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-gray-800 border border-cyan-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
-      <div class="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-        👋
-      </div>
-      <h3 class="text-lg font-bold text-cyan-400">ยินดีต้อนรับสู่ Student Tracker</h3>
-      <p class="text-xs text-gray-300 text-left">ระบบต้องการรู้จักคุณ เพื่อบันทึกและเรียกชื่อของคุณตลอดไป:</p>
-      
-      <div class="space-y-3 text-left">
-        <div>
-          <label class="block text-[11px] text-gray-400 mb-1">ชื่อของคุณ:</label>
-          <input type="text" id="inputName" placeholder="เช่น นวพล" class="w-full p-2.5 text-xs rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400">
-        </div>
-        <div>
-          <label class="block text-[11px] text-gray-400 mb-1">ต้องการให้เรียกว่าอะไร:</label>
-          <select id="selectNameType" class="w-full p-2.5 text-xs rounded-lg bg-gray-700 text-cyan-300 border border-gray-600 focus:outline-none focus:border-cyan-400">
-            <option value="เล่น">เรียกชื่อเล่น</option>
-            <option value="จริง">เรียกชื่อจริง</option>
-          </select>
-        </div>
-      </div>
-
-      <button type="button" onclick="saveUserIdentity()" class="w-full bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-bold py-2.5 rounded-xl transition active:scale-95 text-sm cursor-pointer">
-        บันทึกและเริ่มใช้งาน 🚀
-      </button>
-    </div>
-  </div>
-
-  <!-- ✨ ป๊อปอัพแจ้งเตือนทั่วไปพร้อมปุ่ม OK -->
-  <div id="customModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-gray-800 border border-cyan-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
-      <div class="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+  <!-- ✨ Custom Modal แจ้งเตือน -->
+  <div id="customModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-gray-900 border border-pink-500/40 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 bg-pink-500/20 text-pink-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
         🤖
       </div>
-      <h3 class="text-lg font-bold text-cyan-400">ผลการประมวลผลจาก AI</h3>
-      <p id="modalMessage" class="text-xs text-gray-300 leading-relaxed whitespace-pre-line text-left bg-gray-900/60 p-3 rounded-xl border border-gray-700"></p>
-      <button type="button" onclick="closeModal()" class="w-full bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-bold py-2.5 rounded-xl transition active:scale-95 text-sm cursor-pointer">
+      <h3 class="text-base font-bold text-pink-300">ผลการประมวลผลจาก AI</h3>
+      <div id="modalMessage" class="text-xs text-pink-100 leading-relaxed whitespace-pre-line text-left bg-gray-950/70 p-3.5 rounded-2xl border border-pink-900/40 max-h-60 overflow-y-auto"></div>
+      <button type="button" onclick="closeModal()" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2.5 rounded-2xl transition active:scale-95 text-sm cursor-pointer">
         OK 👍
       </button>
     </div>
   </div>
 
   <script>
-    let userName = localStorage.getItem('user_name');
-    let nameType = localStorage.getItem('name_type') || 'เล่น';
-    let currentSavings = parseFloat(localStorage.getItem('saved_money')) || 0;
-    let targetAmount = parseFloat(localStorage.getItem('saved_target')) || 6000;
-    let goalTitle = localStorage.getItem('saved_title') || "เก็บเงินซื้อของ";
-    let studentClass = localStorage.getItem('student_class') || "";
-    let savedBubbleImg = localStorage.getItem('bubble_photo');
-    let savedScheduleName = localStorage.getItem('schedule_name');
-    let currentStage = parseInt(localStorage.getItem('current_stage')) || 0;
     let isBypassActive = false;
 
     const encouragementPhrases = [
@@ -228,60 +327,24 @@
       "🦄✨ ส่งยิ้มหวานๆ ให้ตัวเองทีนึง คนเก่งสู้ๆ!"
     ];
 
-    window.onload = function() {
-      checkAndResetDailyAt530();
-
-      if (!userName) {
-        document.getElementById('setupModal').classList.remove('hidden');
-      } else {
-        updateUserGreeting();
-      }
-
-      document.getElementById('goalTitleInput').value = goalTitle;
-      document.getElementById('goalTargetInput').value = targetAmount;
-      document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
+    function updateAllUI() {
+      const data = window.userAppData;
+      document.getElementById('goalTitleInput').value = data.goalTitle;
+      document.getElementById('goalTargetInput').value = data.targetAmount;
+      document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${data.goalTitle}`;
       
-      if (studentClass) {
-        document.getElementById('displayStudentClass').innerText = studentClass;
-      } else {
-        document.getElementById('displayStudentClass').innerText = "ยังไม่ได้อัปโหลดตาราง";
-      }
-
       updateProgressUI();
       updateStageUI();
       loadPhotoHistory();
 
-      if (savedBubbleImg) {
+      if (data.bubblePhoto) {
         setupFloatingBubbles();
       }
 
-      if (savedScheduleName) {
-        document.getElementById('scheduleStatus').innerText = `สถานะ: บันทึกตารางเรียน (${savedScheduleName}) เรียบร้อย`;
+      if (data.scheduleName) {
+        document.getElementById('scheduleStatus').innerText = `สถานะ: บันทึกตารางเรียน (${data.scheduleName}) เรียบร้อย`;
         document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
       }
-    };
-
-    // ⏰ ตรวจสอบเวลา รีเซตสเตจ และล้างรูปถ่ายย้อนหลังอัตโนมัติทุกๆ ตี 5:30 น.
-    function checkAndResetDailyAt530() {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      const todayStr = now.toDateString();
-      const lastResetDate = localStorage.getItem('last_reset_date');
-
-      const currentTimeInMinutes = currentHour * 60 + currentMinute;
-      const resetTimeInMinutes = 5 * 60 + 30; // 05:30
-
-      if (lastResetDate !== todayStr && currentTimeInMinutes >= resetTimeInMinutes) {
-        currentStage = 0;
-        localStorage.setItem('current_stage', 0);
-        localStorage.removeItem('daily_photo_history'); // ล้างรูปย้อนหลังของวันเก่าทิ้ง
-        localStorage.setItem('last_reset_date', todayStr);
-      }
-    }
-
-    function updateUserGreeting() {
-      document.getElementById('displayUserName').innerText = `ผู้ใช้งาน: ${userName} (${nameType === 'เล่น' ? 'ชื่อเล่น' : 'ชื่อจริง'})`;
     }
 
     function refreshPage() {
@@ -293,27 +356,33 @@
       const btn = document.getElementById('bypassBtn');
       if (isBypassActive) {
         btn.innerText = "🔓 บายพาส: เปิด";
-        btn.className = "text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer";
+        btn.className = "text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-0.5 rounded-full transition active:scale-95 cursor-pointer";
         showModal(`🔓 เปิดโหมดบายพาสสำเร็จ!\n\nคุณสามารถกดเลือกสเตจภารกิจได้อย่างอิสระชั่วคราว`);
       } else {
         btn.innerText = "🔒 บายพาส: ปิด";
-        btn.className = "text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2 py-0.5 rounded-md transition active:scale-95 cursor-pointer";
+        btn.className = "text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-0.5 rounded-full transition active:scale-95 cursor-pointer";
         showModal(`🔒 ปิดโหมดบายพาสแล้ว!\n\nกลับมาล็อคสเตจและห้ามย้อนกลับเด็ดขาด`);
       }
     }
 
     function updateStageUI() {
-      let percent = (currentStage / 4) * 100;
+      const stage = window.userAppData.currentStage;
+      let percent = (stage / 4) * 100;
       document.getElementById('stageProgressBar').style.width = `${percent}%`;
       
-      let stageText = `Stage ${currentStage}/4 (กำลังดำเนิน 🚀)`;
-      if (currentStage === 0) stageText = `Stage 0/4 (ยังไม่เริ่ม)`;
-      if (currentStage === 4) stageText = `Stage 4/4 (สำเร็จครบวันแล้ว 🎉)`;
+      let stageText = `Stage ${stage}/4 (กำลังดำเนิน 🚀)`;
+      if (stage === 0) stageText = `Stage 0/4 (ยังไม่เริ่ม)`;
+      if (stage === 4) stageText = `Stage 4/4 (สำเร็จครบวันแล้ว 🎉)`;
       
       document.getElementById('displayStageText').innerText = stageText;
+      document.getElementById('displayStudentClass').innerText = window.userAppData.studentClass 
+        ? `${window.userAppData.studentClass} | ${stageText}` 
+        : stageText;
     }
 
     function handleStageLog(stageNum, actionText) {
+      const currentStage = window.userAppData.currentStage;
+
       if (!isBypassActive) {
         if (stageNum <= currentStage) {
           showModal(`⚠️ ไม่สามารถทำสเตจย้อนหลังได้!\n\nคุณได้ผ่าน Stage นี้ไปแล้วหรืออยู่ในสเตจปัจจุบันแล้ว ระบบไม่อนุญาตให้ย้อนกลับเพื่อรักษาความมีวินัยครับ! 🛡️`);
@@ -325,8 +394,8 @@
         }
       }
 
-      currentStage = stageNum;
-      localStorage.setItem('current_stage', currentStage);
+      window.userAppData.currentStage = stageNum;
+      window.syncDataToCloud();
       updateStageUI();
 
       const now = new Date();
@@ -334,11 +403,9 @@
       document.getElementById('userNote').value = `${timeString} น. - ${actionText}`;
 
       let encouragement = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
-      
-      showModal(`📌 บันทึกสเตจสำเร็จ!\n\n- 🎯 ภารกิจ: ${actionText}\n- 📊 สเตจปัจจุบัน: Stage ${currentStage}/4\n\n${encouragement}`);
+      showModal(`📌 บันทึกสเตจสำเร็จ!\n\n- 🎯 ภารกิจ: ${actionText}\n- 📊 สเตจปัจจุบัน: Stage ${stageNum}/4\n\n${encouragement}`);
     }
 
-    // 🫧 สร้างฟองสบู่ลอยขึ้นไปแล้วแตกหายไปอย่างสมบูรณ์แบบ
     function setupFloatingBubbles() {
       const container = document.getElementById('floatingBubblesContainer');
       container.innerHTML = '';
@@ -351,7 +418,7 @@
 
     function createMovingBubble(container, delay) {
       setTimeout(() => {
-        if (!localStorage.getItem('bubble_photo')) return;
+        if (!window.userAppData.bubblePhoto) return;
 
         const bubbleDiv = document.createElement('div');
         const randomX = Math.floor(Math.random() * 75) + 10; 
@@ -364,19 +431,18 @@
         bubbleDiv.style.animationDuration = `${randomDuration}s`;
 
         bubbleDiv.innerHTML = `
-          <div class="relative rounded-full border-3 border-pink-400 shadow-lg shadow-pink-500/40 overflow-hidden bg-gray-800" style="width: ${randomSize}px; height: ${randomSize}px;">
-            <img src="${localStorage.getItem('bubble_photo')}" class="w-full h-full object-cover">
+          <div class="relative rounded-full border-2 border-pink-300 shadow-lg shadow-pink-500/50 overflow-hidden bg-gray-800" style="width: ${randomSize}px; height: ${randomSize}px;">
+            <img src="${window.userAppData.bubblePhoto}" class="w-full h-full object-cover">
           </div>
-          <span class="text-[9px] text-pink-200 mt-1 bg-black/70 px-2.5 py-1 rounded-full backdrop-blur-sm whitespace-nowrap shadow-md border border-pink-500/30 font-medium">
+          <span class="text-[9px] text-pink-100 mt-1 bg-black/75 px-2.5 py-1 rounded-full backdrop-blur-sm whitespace-nowrap shadow-md border border-pink-500/30 font-medium">
             ${randomPhrase}
           </span>
         `;
 
         container.appendChild(bubbleDiv);
 
-        // วนลูปสร้างใหม่เรื่อยๆ เมื่ออนิเมชั่นจบรอบ
         bubbleDiv.addEventListener('animationiteration', () => {
-          if (!localStorage.getItem('bubble_photo')) {
+          if (!window.userAppData.bubblePhoto) {
             bubbleDiv.remove();
             return;
           }
@@ -386,59 +452,37 @@
       }, delay);
     }
 
-    // 🖼️ โหลดและแสดงรูปถ่ายย้อนหลังประจำวัน (เสถียร 100%)
     function loadPhotoHistory() {
       const historyGallery = document.getElementById('historyGallery');
       const historyCount = document.getElementById('historyCount');
-      let historyData = JSON.parse(localStorage.getItem('daily_photo_history')) || [];
+      const photos = window.userAppData.dailyPhotos || [];
 
-      if (historyData.length === 0) {
-        historyGallery.innerHTML = `<span class="text-[11px] text-gray-500 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรายงานพร้อมรูปเพื่อบันทึก)</span>`;
+      if (photos.length === 0) {
+        historyGallery.innerHTML = `<span class="text-[11px] text-pink-300/50 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรายงานพร้อมรูปเพื่อบันทึก)</span>`;
         historyCount.innerText = `0 รูป`;
         return;
       }
 
       historyGallery.innerHTML = '';
-      historyCount.innerText = `${historyData.length} รูป`;
+      historyCount.innerText = `${photos.length} รูป`;
 
-      historyData.forEach((imgBase64, index) => {
+      photos.forEach((imgBase64, index) => {
         const imgThumb = document.createElement('div');
-        imgThumb.className = "w-12 h-12 rounded-lg border border-purple-500/40 overflow-hidden bg-gray-900 cursor-pointer shrink-0 shadow-sm hover:scale-105 transition";
-        imgThumb.innerHTML = `<img src="${imgBase64}" class="w-full h-full object-cover" title="แตะเพื่อดูรูปใหญ่">`;
+        imgThumb.className = "w-12 h-12 rounded-xl border border-pink-500/40 overflow-hidden bg-gray-900 cursor-pointer shrink-0 shadow-sm hover:scale-105 transition";
+        imgThumb.innerHTML = `<img src="${imgBase64}" class="w-full h-full object-cover">`;
         imgThumb.onclick = function() {
-          showModal(`🖼️ รูปถ่ายย้อนหลัง (รูปที่ ${index + 1}):\n\n<img src="${imgBase64}" class="w-full rounded-xl mt-2 border border-purple-500/30">`);
+          showModal(`🖼️ รูปถ่ายย้อนหลัง (รูปที่ ${index + 1}):\n\n<img src="${imgBase64}" class="w-full rounded-2xl mt-2 border border-pink-500/30">`);
         };
         historyGallery.appendChild(imgThumb);
       });
     }
 
-    function saveUserIdentity() {
-      const nameInput = document.getElementById('inputName').value.trim();
-      const typeInput = document.getElementById('selectNameType').value;
-
-      if (!nameInput) {
-        alert('กรุณากรอกชื่อของคุณด้วยครับ!');
-        return;
-      }
-
-      userName = nameInput;
-      nameType = typeInput;
-
-      localStorage.setItem('user_name', userName);
-      localStorage.setItem('name_type', nameType);
-
-      document.getElementById('setupModal').classList.add('hidden');
-      updateUserGreeting();
-
-      showModal(`ยินดีต้อนรับอย่างเป็นทางการครับคุณ ${userName}! ระบบบันทึกข้อมูลเรียบร้อยครับ`);
-    }
-
+    // 🧠 AI OCR สแกนตารางเรียน
     document.getElementById('scheduleInput').addEventListener('change', async function(e) {
       if(e.target.files.length > 0) {
         const file = e.target.files[0];
-        
-        document.getElementById('scheduleStatus').innerText = "⏳ AI กำลังสแกนและวิเคราะห์ตัวหนังสือในภาพ...";
-        document.getElementById('scheduleStatus').className = "text-[10px] text-amber-400 mt-1 animate-pulse";
+        document.getElementById('scheduleStatus').innerText = "⏳ AI กำลังสแกนและวิเคราะห์ตัวหนังสือ...";
+        document.getElementById('scheduleStatus').className = "text-[10px] text-pink-400 mt-1 animate-pulse";
 
         try {
           const worker = await Tesseract.createWorker('tha+eng');
@@ -449,9 +493,9 @@
           const fn = (file.name + " " + extractedText).toLowerCase();
 
           if (!extractedText || extractedText.length < 5) {
-            document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบตัวอักษรใดๆ ในรูปภาพ กรุณาอัปโหลดใหม่";
-            document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
-            showModal(`❌ เกิดข้อผิดพลาดในการประมวลผล!\n\nไม่พบตัวอักษรหรือรหัสวิชาใดๆ ในรูปภาพตารางเรียนนี้\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีความคมชัด และเห็นข้อความชัดเจนใหม่อีกครั้งครับ!`);
+            document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบตัวอักษรใดๆ ในรูปภาพ";
+            document.getElementById('scheduleStatus').className = "text-[10px] text-rose-400 mt-1";
+            showModal(`❌ เกิดข้อผิดพลาดในการประมวลผล!\n\nไม่พบตัวอักษรหรือรหัสวิชาในรูปตารางเรียนนี้ กรุณาอัปโหลดรูปที่คมชัดใหม่อีกครั้งครับ`);
             return;
           }
 
@@ -501,43 +545,43 @@
                 detectedClass = `${levelPrefix} ศิลป์-คำนวณ หรือ ภาษา`;
               }
             } else {
-              document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนก กรุณาอัปโหลดใหม่";
-              document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
-              showModal(`⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนกวิชาในรูปภาพ!\n\nAI อ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้น (ม.4-6, ปวช., ปวส.) หรือชื่อแผนกที่ถูกต้อง\n\n💡 กรุณาอัปโหลดรูปภาพตารางเรียนที่มีข้อความชัดเจนใหม่อีกครั้งครับ!`);
+              document.getElementById('scheduleStatus').innerText = "⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนก";
+              document.getElementById('scheduleStatus').className = "text-[10px] text-rose-400 mt-1";
+              showModal(`⚠️ ไม่พบข้อมูลระดับชั้นหรือแผนกวิชาในรูปภาพ!\n\nAI อ่านตัวหนังสือได้ แต่ไม่พบข้อมูลระดับชั้นที่ถูกต้อง กรุณาอัปโหลดรูปภาพที่มีข้อความชัดเจนอีกครั้งครับ`);
               return;
             }
           }
 
-          studentClass = detectedClass;
-          localStorage.setItem('student_class', studentClass);
-          localStorage.setItem('schedule_name', file.name);
+          window.userAppData.studentClass = detectedClass;
+          window.userAppData.scheduleName = file.name;
+          window.syncDataToCloud();
 
-          document.getElementById('displayStudentClass').innerText = studentClass;
+          updateStageUI();
           document.getElementById('scheduleStatus').innerText = `สถานะ: ประมวลผลสำเร็จ (${file.name})`;
           document.getElementById('scheduleStatus').className = "text-[10px] text-emerald-400 mt-1";
 
-          showModal(`🔍 AI OCR สแกนตารางเรียนสำเร็จ!\n\n- ตารางที่อัปโหลด: ${file.name}\n- ระดับชั้นและแผนก: ${studentClass}\n\n💡 บันทึกข้อมูลตารางเรียนของคุณ ${userName} เรียบร้อยถาวรครับ!`);
+          showModal(`🔍 AI OCR สแกนตารางเรียนสำเร็จ!\n\n- ตารางที่อัปโหลด: ${file.name}\n- ระดับชั้นและแผนก: ${detectedClass}\n\n💡 บันทึกข้อมูลตารางเรียนเข้า Cloud เรียบร้อยถาวรครับ!`);
 
         } catch (err) {
           console.error(err);
-          document.getElementById('scheduleStatus').innerText = "⚠️ สแกนรูปภาพล้มเหลว กรุณาอัปโหลดใหม่";
-          document.getElementById('scheduleStatus').className = "text-[10px] text-red-400 mt-1";
-          showModal(`❌ เกิดข้อผิดพลาดในการอ่านไฟล์ภาพ!\n\nกรุณาลองอัปโหลดรูปภาพตารางเรียนใหม่อีกครั้งครับ`);
+          document.getElementById('scheduleStatus').innerText = "⚠️ สแกนรูปภาพล้มเหลว";
+          document.getElementById('scheduleStatus').className = "text-[10px] text-rose-400 mt-1";
+          showModal(`❌ เกิดข้อผิดพลาดในการอ่านไฟล์ภาพ กรุณาลองอัปโหลดใหม่อีกครั้งครับ`);
         }
       }
     });
 
     function clearSchedule() {
-      localStorage.removeItem('student_class');
-      localStorage.removeItem('schedule_name');
-      studentClass = "";
-      
-      document.getElementById('displayStudentClass').innerText = "ยังไม่ได้อัปโหลดตาราง";
+      window.userAppData.studentClass = "";
+      window.userAppData.scheduleName = "";
+      window.syncDataToCloud();
+
+      updateStageUI();
       document.getElementById('scheduleInput').value = "";
       document.getElementById('scheduleStatus').innerText = "สถานะ: ยังไม่ได้อัปโหลดตารางเรียน";
-      document.getElementById('scheduleStatus').className = "text-[10px] text-gray-400 mt-1";
+      document.getElementById('scheduleStatus').className = "text-[10px] text-pink-300/60 mt-1";
 
-      showModal(`🗑️ ลบข้อมูลตารางเรียนทั้งหมดเรียบร้อยแล้วครับคุณ ${userName}!\n\nข้อมูลเก่าถูกล้างออกจากระบบ 100% สามารถอัปโหลดรูปตารางใหม่ได้ทันทีครับ`);
+      showModal(`🗑️ ลบข้อมูลตารางเรียนเรียบร้อยแล้ว สามารถอัปโหลดรูปตารางใหม่ได้ทันทีครับ`);
     }
 
     document.getElementById('bubbleImageInput').addEventListener('change', function(e) {
@@ -545,8 +589,8 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          const base64Img = event.target.result;
-          localStorage.setItem('bubble_photo', base64Img);
+          window.userAppData.bubblePhoto = event.target.result;
+          window.syncDataToCloud();
           setupFloatingBubbles();
         };
         reader.readAsDataURL(file);
@@ -554,9 +598,10 @@
     });
 
     function updateProgressUI() {
-      let percent = (currentSavings / targetAmount) * 100;
+      const data = window.userAppData;
+      let percent = (data.currentSavings / data.targetAmount) * 100;
       if (percent > 100) percent = 100;
-      document.getElementById('displayGoalProgress').innerText = `${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท`;
+      document.getElementById('displayGoalProgress').innerText = `${data.currentSavings.toLocaleString()} / ${data.targetAmount.toLocaleString()} บาท`;
       document.getElementById('progressBar').style.width = `${percent}%`;
     }
 
@@ -574,17 +619,15 @@
       const targetInput = document.getElementById('goalTargetInput').value;
 
       if (targetInput) {
-        targetAmount = parseFloat(targetInput) || 6000;
+        window.userAppData.targetAmount = parseFloat(targetInput) || 6000;
       }
-      goalTitle = titleInput ? titleInput : "เป้าหมายการเก็บเงิน";
+      window.userAppData.goalTitle = titleInput ? titleInput : "เป้าหมายการเก็บเงิน 🎀";
 
-      localStorage.setItem('saved_title', goalTitle);
-      localStorage.setItem('saved_target', targetAmount);
-
-      document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${goalTitle}`;
+      window.syncDataToCloud();
+      document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${window.userAppData.goalTitle}`;
       updateProgressUI();
 
-      showModal(`🎯 บันทึกตั้งค่าเป้าหมายสำเร็จ!\n- หัวข้อ: ${goalTitle}\n- เป้าหมายใหม่: ${targetAmount.toLocaleString()} บาท\n- ยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} บาท`);
+      showModal(`🎯 บันทึกตั้งค่าเป้าหมายสำเร็จ!\n- หัวข้อ: ${window.userAppData.goalTitle}\n- เป้าหมายใหม่: ${window.userAppData.targetAmount.toLocaleString()} บาท`);
     }
 
     function addSavings() {
@@ -592,8 +635,8 @@
       const addVal = parseFloat(addInput);
       
       if (!isNaN(addVal) && addVal > 0) {
-        currentSavings += addVal;
-        localStorage.setItem('saved_money', currentSavings);
+        window.userAppData.currentSavings += addVal;
+        window.syncDataToCloud();
       } else {
         alert('กรุณากรอกจำนวนเงินที่ต้องการฝากเพิ่มให้ถูกต้องครับ!');
         return;
@@ -601,14 +644,14 @@
 
       updateProgressUI();
       document.getElementById('addMoneyInput').value = '';
-      
-      let percent = (currentSavings / targetAmount) * 100;
+
+      const data = window.userAppData;
+      let percent = (data.currentSavings / data.targetAmount) * 100;
       if (percent > 100) percent = 100;
 
-      showModal(`💰 ฝากเงินเข้าเป้าหมาย "${goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)\n\n💡 สู้ๆ ครับคุณ ${userName} อีกนิดเดียวก็ถึงเป้าหมายแล้ว!`);
+      showModal(`💰 ฝากเงินเข้าเป้าหมาย "${data.goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${data.currentSavings.toLocaleString()} / ${data.targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)`);
     }
 
-    // 🚀 ส่งรายงานปุ๊บ บันทึกและแสดงรูปย้อนหลังปั๊บทันที (แก้ไขให้เสถียร 100%)
     function handleFormSubmit(event) {
       event.preventDefault();
       const note = document.getElementById('userNote').value;
@@ -624,20 +667,21 @@
         const reader = new FileReader();
         reader.onload = function(event) {
           const base64Img = event.target.result;
-          let historyData = JSON.parse(localStorage.getItem('daily_photo_history')) || [];
-          historyData.push(base64Img);
-          localStorage.setItem('daily_photo_history', JSON.stringify(historyData));
-          loadPhotoHistory(); // อัปเดตแกลเลอรีทันที
+          if (!window.userAppData.dailyPhotos) window.userAppData.dailyPhotos = [];
+          window.userAppData.dailyPhotos.push(base64Img);
+          window.syncDataToCloud();
+          loadPhotoHistory();
         };
         reader.readAsDataURL(file);
       }
 
-      let encouragement = `💖 เก่งมากครับคุณ ${userName}! วันนี้มีความตั้งใจและมีวินัยสุดๆ ขอให้เป็นวันที่ราบรื่นและมีความสุข พักผ่อนเยอะๆ นะครับ!`;
+      let encouragement = `💖 เก่งมากครับ! วันนี้มีความตั้งใจและมีวินัยสุดๆ ขอให้เป็นวันที่ราบรื่นนะคนเก่ง!`;
       if (imageInput.files.length > 0) {
-        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมของคุณ ${userName} เรียบร้อย!\nรูปภาพถูกบันทึกและแสดงใน "รูปถ่ายย้อนหลัง" ทันทีครับ สู้ๆ ครับ คนเก่ง!`;
+        encouragement = `📸✨ AI วิเคราะห์รูปภาพกิจกรรมเรียบร้อย รูปภาพถูกบันทึกขึ้น Cloud และแสดงย้อนหลังทันทีครับ!`;
       }
 
-      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- ผู้ใช้งาน: ${userName}\n- สเตจภารกิจ: Stage ${currentStage}/4\n- ระดับชั้นและแผนก: ${studentClass || 'ยังไม่ได้อัปโหลดตาราง'}\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${currentSavings.toLocaleString()} / ${targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
+      const data = window.userAppData;
+      let responseMsg = `✅ บันทึกรายงานประจำวันสำเร็จ!\n- สเตจภารกิจ: Stage ${data.currentStage}/4\n- บันทึก: "${note || 'ไม่มีข้อความ'}"\n- ยอดเงินสะสม: ${data.currentSavings.toLocaleString()} / ${data.targetAmount.toLocaleString()} บาท\n\n${encouragement}`;
       
       showModal(responseMsg);
       document.getElementById('userNote').value = '';
