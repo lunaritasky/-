@@ -27,13 +27,11 @@
       measurementId: "G-2FT4GP8H2J"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // Global App State Variables
     window.currentUser = null;
     window.userAppData = {
       studentClass: "",
@@ -47,7 +45,6 @@
       dailyPhotos: []
     };
 
-    // ⏰ ตรวจสอบและรีเซตสเตจ + ล้างรูปย้อนหลังตอน 05:30 น.
     function checkAndResetDailyAt530() {
       const now = new Date();
       const currentHour = now.getHours();
@@ -64,7 +61,6 @@
       }
     }
 
-    // ☁️ โหลดข้อมูลผู้ใช้จาก Firestore
     async function loadUserData(uid) {
       const docRef = doc(db, "users", uid);
       const docSnap = await getDoc(docRef);
@@ -79,7 +75,6 @@
       updateAllUI();
     }
 
-    // ☁️ ซิงค์บันทึกข้อมูลขึ้น Cloud Firestore
     window.syncDataToCloud = async function() {
       if (!window.currentUser) return;
       try {
@@ -90,7 +85,6 @@
       }
     };
 
-    // 🔐 ตรวจสอบสถานะการล็อกอิน Google
     onAuthStateChanged(auth, (user) => {
       if (user) {
         window.currentUser = user;
@@ -104,14 +98,12 @@
       }
     });
 
-    // 🚀 ปุ่มกดล็อกอิน Google
     window.loginWithGoogle = function() {
       signInWithPopup(auth, provider).catch((error) => {
         alert("เกิดข้อผิดพลาดในการล็อกอิน: " + error.message);
       });
     };
 
-    // 🚪 ปุ่มออกจากระบบ
     window.logoutGoogle = function() {
       signOut(auth).then(() => {
         window.location.reload();
@@ -125,24 +117,24 @@
       height: 100%;
       overflow-y: auto !important;
       -webkit-overflow-scrolling: touch;
-      background: linear-gradient(135deg, #181119 0%, #2a1226 50%, #1a0b18 100%);
+      background: linear-gradient(135deg, #1f111b 0%, #32162c 50%, #1e0d1b 100%);
     }
     
-    /* 🫧 อนิเมชั่นฟองสบู่ลอยและแตกแบบนุ่มนวล */
+    /* 🫧 ฟองสบู่ลอยแบบละมุน ไม่ถี่จนเกินไป */
     @keyframes floatAndBurst {
-      0% { transform: translateY(0px) scale(0.5) rotate(0deg); opacity: 0; }
-      15% { opacity: 0.95; transform: translateY(-60px) scale(1.1) rotate(5deg); }
-      75% { opacity: 0.95; transform: translateY(-280px) scale(1) rotate(-5deg); }
-      90% { transform: translateY(-340px) scale(1.25) rotate(10deg); opacity: 0.6; }
-      100% { transform: translateY(-360px) scale(0.1) rotate(15deg); opacity: 0; }
+      0% { transform: translateY(0px) scale(0.4) rotate(0deg); opacity: 0; }
+      20% { opacity: 0.9; transform: translateY(-80px) scale(1) rotate(5deg); }
+      80% { opacity: 0.9; transform: translateY(-320px) scale(1) rotate(-5deg); }
+      95% { transform: translateY(-380px) scale(1.1) rotate(10deg); opacity: 0.4; }
+      100% { transform: translateY(-400px) scale(0.1) rotate(15deg); opacity: 0; }
     }
 
     .bubble-burst-anim {
-      animation: floatAndBurst 3.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+      animation: floatAndBurst 5s cubic-bezier(0.25, 1, 0.5, 1) infinite;
     }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #2a1226; }
+    ::-webkit-scrollbar-track { background: #32162c; }
     ::-webkit-scrollbar-thumb { background: #f472b6; border-radius: 10px; }
   </style>
 </head>
@@ -151,15 +143,15 @@
   <!-- 🫧 พื้นที่สร้างฟองสบู่ลอยวนลูป -->
   <div id="floatingBubblesContainer" class="fixed inset-0 pointer-events-none z-40 overflow-hidden hidden"></div>
 
-  <!-- 🔐 หน้าจอเข้าสู่ระบบด้วย Google (Overlay) -->
+  <!-- 🔐 หน้าจอเข้าสู่ระบบด้วย Google -->
   <div id="loginOverlay" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
-    <div class="bg-gradient-to-b from-gray-900 to-pink-950 border border-pink-500/40 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
-      <div class="w-20 h-20 bg-pink-500/20 text-pink-400 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner border border-pink-500/30">
+    <div class="bg-gradient-to-b from-gray-900 to-pink-950 border border-pink-400/40 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
+      <div class="w-20 h-20 bg-pink-500/20 text-pink-300 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner border border-pink-400/30">
         🎀
       </div>
       <div>
-        <h2 class="text-2xl font-bold text-pink-300">Student Tracker</h2>
-        <p class="text-xs text-pink-200/70 mt-1">บันทึกวินัย ตารางเรียน และเป้าหมายเงินออม 💖</p>
+        <h2 class="text-2xl font-bold text-pink-200">Student Tracker</h2>
+        <p class="text-xs text-pink-300/70 mt-1">บันทึกวินัย ตารางเรียน และเป้าหมายเงินออม 💖</p>
       </div>
 
       <button onclick="loginWithGoogle()" class="w-full bg-white hover:bg-pink-50 text-gray-800 font-bold py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition transform active:scale-95 border border-pink-200 cursor-pointer">
@@ -171,142 +163,188 @@
   </div>
 
   <!-- 📱 กล่องแอปพลิเคชันหลัก -->
-  <div class="w-full max-w-md bg-gray-900/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-pink-500/30 space-y-4 relative z-10 my-auto">
+  <div class="w-full max-w-md bg-gray-900/95 backdrop-blur-xl rounded-3xl p-5 shadow-2xl border border-pink-400/30 space-y-4 relative z-10 my-auto">
     
     <!-- Header ส่วนหัว -->
-    <div class="flex items-center justify-between pb-2 border-b border-pink-900/40">
+    <div class="flex items-center justify-between pb-3 border-b border-pink-900/50">
       <div class="flex items-center gap-3">
         <img id="userProfileImg" src="" class="w-10 h-10 rounded-full border-2 border-pink-400 shadow-md">
         <div>
-          <h1 class="text-base font-bold text-pink-300 flex items-center gap-1">Student Tracker 🌸</h1>
-          <p id="displayUserName" class="text-xs text-pink-200/80">กำลังโหลดข้อมูล...</p>
+          <h1 class="text-base font-bold text-pink-200 flex items-center gap-1">Student Tracker 🌸</h1>
+          <p id="displayUserName" class="text-xs text-pink-300/80">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button type="button" onclick="refreshPage()" class="bg-pink-950 hover:bg-pink-900 text-pink-300 p-2 rounded-full border border-pink-500/30 transition active:scale-90 cursor-pointer" title="รีเฟรชเว็บ">
+        <button type="button" onclick="refreshPage()" class="bg-pink-950/80 hover:bg-pink-900 text-pink-300 p-2 rounded-full border border-pink-400/30 transition active:scale-90 cursor-pointer" title="รีเฟรชเว็บ">
           🔄
         </button>
-        <button type="button" onclick="logoutGoogle()" class="bg-red-950/80 hover:bg-red-900 text-red-300 p-2 rounded-full border border-red-500/30 transition active:scale-90 cursor-pointer" title="ออกจากระบบ">
+        <button type="button" onclick="logoutGoogle()" class="bg-red-950/80 hover:bg-red-900 text-red-300 p-2 rounded-full border border-red-400/30 transition active:scale-90 cursor-pointer" title="ออกจากระบบ">
           🚪
         </button>
       </div>
     </div>
 
-    <!-- 📊 แถบสเตจภารกิจประจำวัน -->
-    <div class="p-3.5 bg-gradient-to-r from-pink-950/60 to-purple-950/60 rounded-2xl border border-pink-500/30 space-y-2">
-      <div class="flex justify-between items-center text-xs">
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-pink-300">📊 สเตจภารกิจวันนี้:</span>
-          <span id="displayStageText" class="font-bold text-pink-400">Stage 0/4</span>
-        </div>
-        <button type="button" id="bypassBtn" onclick="toggleBypass()" class="text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-0.5 rounded-full transition active:scale-95 cursor-pointer">
-          🔒 บายพาส: ปิด
-        </button>
-      </div>
-      <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-pink-950">
-        <div id="stageProgressBar" class="bg-gradient-to-r from-pink-500 to-rose-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-      </div>
-      <p id="displayStudentClass" class="text-[11px] text-pink-200/80 font-medium text-center pt-0.5">ยังไม่ได้อัปโหลดตารางเรียน</p>
+    <!-- 🔘 แถบปุ่มเลือกเมนูหลัก (Tab Menu) -->
+    <div class="grid grid-cols-3 gap-1.5 p-1 bg-pink-950/50 rounded-2xl border border-pink-500/30">
+      <button onclick="switchTab('report')" id="tabReportBtn" class="py-2 text-xs font-bold rounded-xl transition bg-pink-600 text-white shadow-md cursor-pointer flex items-center justify-center gap-1">
+        📋 รายงาน
+      </button>
+      <button onclick="switchTab('savings')" id="tabSavingsBtn" class="py-2 text-xs font-bold rounded-xl transition text-pink-300 hover:text-white cursor-pointer flex items-center justify-center gap-1">
+        🎯 เก็บเงิน
+      </button>
+      <button onclick="switchTab('settings')" id="tabSettingsBtn" class="py-2 text-xs font-bold rounded-xl transition text-pink-300 hover:text-white cursor-pointer flex items-center justify-center gap-1">
+        🫧 ตั้งค่าฟองสบู่
+      </button>
     </div>
 
-    <!-- 🖼️ เมนูระบบดูรูปย้อนหลังประจำวัน -->
-    <div class="p-3.5 bg-pink-950/40 rounded-2xl border border-pink-500/20 space-y-2">
-      <div class="flex justify-between items-center">
-        <label class="block text-xs font-semibold text-pink-300">🖼️ รูปถ่ายย้อนหลังประจำวัน (ส่งปุ๊บขึ้นปั๊บ):</label>
-        <span id="historyCount" class="text-[10px] text-pink-300/60">0 รูป</span>
-      </div>
-      <div id="historyGallery" class="flex gap-2 overflow-x-auto py-1 min-h-[55px] items-center">
-        <span class="text-[11px] text-pink-300/50 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรายงานพร้อมรูปเพื่อบันทึก)</span>
-      </div>
-    </div>
-
-    <!-- 🫧 เมนูตั้งค่ารูปฟองสบู่ -->
-    <div class="p-3 bg-pink-950/30 rounded-2xl border border-pink-500/20 space-y-1.5">
-      <label class="block text-xs font-semibold text-pink-300">🫧 ตั้งค่ารูปฟองสบู่ลอย (รูปแฟน / กำลังใจ):</label>
-      <input type="file" id="bubbleImageInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
-    </div>
-
-    <!-- 💰 เมนูเป้าหมายการเก็บเงิน -->
-    <div class="p-4 bg-gradient-to-b from-pink-950/50 to-gray-900 rounded-2xl border border-pink-500/30 space-y-3">
-      <div class="flex justify-between items-center">
-        <h2 id="displayGoalTitle" class="text-sm font-semibold text-pink-300">🎯 เป้าหมาย: เก็บเงินซื้อของ 🎀</h2>
-        <span id="displayGoalProgress" class="text-xs text-pink-200/80">0 / 6,000 บาท</span>
-      </div>
-
-      <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-pink-900/50">
-        <div id="progressBar" class="bg-gradient-to-r from-emerald-400 to-pink-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-      </div>
-
-      <div class="space-y-2 pt-2 border-t border-pink-900/30">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[10px] text-pink-300/70 mb-1">หัวข้อเป้าหมาย:</label>
-            <input type="text" id="goalTitleInput" placeholder="ซื้อเครื่องเกม" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-500/30 focus:outline-none focus:border-pink-400">
+    <!-- ================= 📋 เมนูที่ 1: รายงาน (Report & Stage) ================= -->
+    <div id="tabReportContent" class="space-y-4">
+      <!-- 📊 แถบสเตจภารกิจประจำวัน -->
+      <div class="p-3.5 bg-gradient-to-r from-pink-950/60 to-purple-950/60 rounded-2xl border border-pink-400/30 space-y-2">
+        <div class="flex justify-between items-center text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-pink-200">📊 สเตจภารกิจวันนี้:</span>
+            <span id="displayStageText" class="font-bold text-pink-400">Stage 0/4</span>
           </div>
-          <div>
-            <label class="block text-[10px] text-pink-300/70 mb-1">เป้าหมายจำนวนเงิน (บาท):</label>
-            <input type="number" id="goalTargetInput" value="6000" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-500/30 focus:outline-none focus:border-pink-400">
-          </div>
-        </div>
-
-        <button type="button" onclick="saveGoalSettings()" class="w-full bg-pink-700 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded-xl transition active:scale-95 cursor-pointer shadow-md">
-          💾 บันทึกตั้งค่าเป้าหมายใหม่
-        </button>
-
-        <div class="flex gap-2 pt-1 border-t border-pink-900/30">
-          <input type="number" id="addMoneyInput" placeholder="+ จำนวนเงินที่เก็บเพิ่ม" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-500/30 focus:outline-none focus:border-pink-400">
-          <button type="button" onclick="addSavings()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition active:scale-95 whitespace-nowrap cursor-pointer shadow-md">
-            ➕ ฝากเงิน
+          <button type="button" id="bypassBtn" onclick="toggleBypass()" class="text-[10px] bg-amber-600/80 hover:bg-amber-500 text-white px-2.5 py-0.5 rounded-full transition active:scale-95 cursor-pointer">
+            🔒 บายพาส: ปิด
           </button>
         </div>
+        <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-pink-950">
+          <div id="stageProgressBar" class="bg-gradient-to-r from-pink-500 to-rose-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <p id="displayStudentClass" class="text-[11px] text-pink-300/80 font-medium text-center pt-0.5">ยังไม่ได้อัปโหลดตารางเรียน</p>
+      </div>
+
+      <!-- 📅 ส่วนอัปเดตตารางเรียน + ปุ่มลบตาราง -->
+      <div class="p-3 bg-pink-950/30 rounded-2xl border border-pink-400/20 space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="block text-xs font-semibold text-pink-200">📅 อัปเดตตารางเรียน (AI OCR สแกนรูปภาพ):</label>
+          <button type="button" onclick="clearSchedule()" class="text-[10px] bg-rose-800 hover:bg-rose-700 text-white px-2 py-0.5 rounded-lg transition active:scale-95 cursor-pointer">🗑️ ลบออก</button>
+        </div>
+        <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
+        <p id="scheduleStatus" class="text-[10px] text-pink-300/60">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
+      </div>
+
+      <!-- ปุ่มบันทึกด่วน (Quick Log) -->
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" onclick="handleStageLog(1, '🌅 ตื่นนอนตอนเช้า')" class="bg-rose-600 hover:bg-rose-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🌅 ตื่นนอน (1/4)</button>
+        <button type="button" onclick="handleStageLog(2, '🏫 ถึงสถาบันแล้ว')" class="bg-pink-600 hover:bg-pink-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🏫 ถึงสถาบัน (2/4)</button>
+        <button type="button" onclick="handleStageLog(3, '🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🏠 ถึงที่พัก (3/4)</button>
+        <button type="button" onclick="handleStageLog(4, '🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🌙 เข้านอน (4/4)</button>
+      </div>
+
+      <!-- ฟอร์มรายงานประจำวัน -->
+      <form id="reportForm" onsubmit="handleFormSubmit(event)" class="space-y-3 pt-1">
+        <div>
+          <label class="block text-xs font-medium text-pink-200 mb-1">📷 รูปภาพกิจกรรมประจำวัน:</label>
+          <input type="file" id="imageInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-pink-200 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
+          <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-2xl bg-gray-800 text-pink-50 border border-pink-400/30 focus:outline-none focus:border-pink-400 placeholder-pink-300/30" placeholder="เช่น ตั้งใจเรียนวิชาหลักเรียบร้อย..."></textarea>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-bold py-3 rounded-2xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
+          🚀 ส่งรายงานและรับพลังใจด้วย AI
+        </button>
+      </form>
+
+      <!-- 🖼️ รูปถ่ายย้อนหลังประจำวัน -->
+      <div class="p-3.5 bg-pink-950/40 rounded-2xl border border-pink-400/20 space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="block text-xs font-semibold text-pink-200">🖼️ รูปถ่ายย้อนหลังประจำวัน (ส่งปุ๊บขึ้นปั๊บ):</label>
+          <span id="historyCount" class="text-[10px] text-pink-300/60">0 รูป</span>
+        </div>
+        <div id="historyGallery" class="flex gap-2 overflow-x-auto py-1 min-h-[55px] items-center">
+          <span class="text-[11px] text-pink-300/50 italic">ยังไม่มีรูปถ่ายในวันนี้ (ส่งรายงานพร้อมรูปเพื่อบันทึก)</span>
+        </div>
       </div>
     </div>
 
-    <!-- 📅 ส่วนอัปเดตตารางเรียน + ปุ่มลบตาราง -->
-    <div class="p-3 bg-pink-950/30 rounded-2xl border border-pink-500/20 space-y-2">
-      <div class="flex justify-between items-center">
-        <label class="block text-xs font-semibold text-pink-300">📅 อัปเดตตารางเรียน (AI OCR สแกนรูปภาพ):</label>
-        <button type="button" onclick="clearSchedule()" class="text-[10px] bg-rose-800 hover:bg-rose-700 text-white px-2 py-0.5 rounded-lg transition active:scale-95 cursor-pointer">🗑️ ลบออก</button>
+    <!-- ================= 🎯 เมนูที่ 2: เก็บเงิน & แก้ไขข้อผิดพลาด (Savings & Adjust) ================= -->
+    <div id="tabSavingsContent" class="space-y-4 hidden">
+      <div class="p-4 bg-gradient-to-b from-pink-950/50 to-gray-900 rounded-2xl border border-pink-400/30 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 id="displayGoalTitle" class="text-sm font-semibold text-pink-200">🎯 เป้าหมาย: เก็บเงินซื้อของ 🎀</h2>
+          <span id="displayGoalProgress" class="text-xs text-pink-300/80">0 / 6,000 บาท</span>
+        </div>
+
+        <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-pink-900/50">
+          <div id="progressBar" class="bg-gradient-to-r from-emerald-400 to-pink-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <div class="space-y-2.5 pt-2 border-t border-pink-900/30">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] text-pink-300/70 mb-1">หัวข้อเป้าหมาย:</label>
+              <input type="text" id="goalTitleInput" placeholder="ซื้อเครื่องเกม" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-400/30 focus:outline-none focus:border-pink-400">
+            </div>
+            <div>
+              <label class="block text-[10px] text-pink-300/70 mb-1">เป้าหมายจำนวนเงิน (บาท):</label>
+              <input type="number" id="goalTargetInput" value="6000" class="w-full p-2 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-400/30 focus:outline-none focus:border-pink-400">
+            </div>
+          </div>
+
+          <button type="button" onclick="saveGoalSettings()" class="w-full bg-pink-700 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded-xl transition active:scale-95 cursor-pointer shadow-md">
+            💾 บันทึกตั้งค่าเป้าหมายใหม่
+          </button>
+
+          <!-- ➕ ฝากเงิน และ ➖ หักเงินออก (แก้ไขข้อผิดพลาด) -->
+          <div class="pt-2 border-t border-pink-900/30 space-y-2">
+            <label class="block text-xs font-semibold text-pink-200">💰 จัดการยอดเงินออม:</label>
+            <div class="flex gap-2">
+              <input type="number" id="moneyActionInput" placeholder="จำนวนเงิน (บาท)" class="w-full p-2.5 text-xs rounded-xl bg-gray-800 text-pink-100 border border-pink-400/30 focus:outline-none focus:border-pink-400">
+              <button type="button" onclick="addSavings()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition active:scale-95 whitespace-nowrap cursor-pointer shadow-md">
+                ➕ ฝากเพิ่ม
+              </button>
+              <button type="button" onclick="deductSavings()" class="bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold px-3 py-2 rounded-xl transition active:scale-95 whitespace-nowrap cursor-pointer shadow-md" title="เผื่อพิมพ์ผิดหรือต้องการหักออก">
+                ➖ หักออก
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <input type="file" id="scheduleInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
-      <p id="scheduleStatus" class="text-[10px] text-pink-300/60">สถานะ: ยังไม่ได้อัปโหลดตารางเรียน</p>
     </div>
 
-    <!-- ปุ่มบันทึกด่วน (Quick Log) -->
-    <div class="grid grid-cols-2 gap-2">
-      <button type="button" onclick="handleStageLog(1, '🌅 ตื่นนอนตอนเช้า')" class="bg-rose-600 hover:bg-rose-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🌅 ตื่นนอน (1/4)</button>
-      <button type="button" onclick="handleStageLog(2, '🏫 ถึงสถาบันแล้ว')" class="bg-pink-600 hover:bg-pink-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🏫 ถึงสถาบัน (2/4)</button>
-      <button type="button" onclick="handleStageLog(3, '🏠 กลับถึงที่พักแล้ว')" class="bg-purple-600 hover:bg-purple-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🏠 ถึงที่พัก (3/4)</button>
-      <button type="button" onclick="handleStageLog(4, '🌙 เตรียมตัวเข้านอน')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium py-2.5 rounded-2xl transition active:scale-95 cursor-pointer shadow-md">🌙 เข้านอน (4/4)</button>
+    <!-- ================= 🫧 เมนูที่ 3: ตั้งค่ารูปฟองสบู่ (Bubble Settings) ================= -->
+    <div id="tabSettingsContent" class="space-y-4 hidden">
+      <div class="p-4 bg-pink-950/40 rounded-2xl border border-pink-400/30 space-y-3 text-center">
+        <div class="w-16 h-16 bg-pink-500/20 text-pink-300 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner border border-pink-400/30">
+          🫧
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-pink-200">ตั้งค่ารูปฟองสบู่ลอย</h2>
+          <p class="text-xs text-pink-300/70 mt-0.5">เลือกรูปภาพที่คุณต้องการให้ลอยขึ้นพร้อมข้อความกำลังใจ</p>
+        </div>
+
+        <div class="space-y-2 text-left pt-2">
+          <label class="block text-xs font-semibold text-pink-200">📷 อัปโหลดรูปภาพ (รูปแฟน / ไอดอล / กำลังใจ):</label>
+          <input type="file" id="bubbleImageInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
+        </div>
+
+        <div id="bubblePreviewContainer" class="pt-2 hidden">
+          <p class="text-xs text-pink-300/80 mb-1">ตัวอย่างรูปปัจจุบัน:</p>
+          <img id="bubblePreviewImg" src="" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-pink-400 shadow-md">
+        </div>
+
+        <button type="button" onclick="clearBubblePhoto()" class="w-full bg-rose-950/80 hover:bg-rose-900 text-rose-300 text-xs font-bold py-2 rounded-xl transition active:scale-95 cursor-pointer border border-rose-500/30">
+          🗑️ ลบรูปฟองสบู่ปัจจุบันออก
+        </button>
+      </div>
     </div>
-
-    <!-- ฟอร์มรายงานประจำวัน -->
-    <form id="reportForm" onsubmit="handleFormSubmit(event)" class="space-y-3">
-      <div>
-        <label class="block text-xs font-medium text-pink-200/90 mb-1">📷 รูปภาพกิจกรรมประจำวัน:</label>
-        <input type="file" id="imageInput" accept="image/*" class="w-full text-xs text-pink-200 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
-      </div>
-
-      <div>
-        <label class="block text-xs font-medium text-pink-200/90 mb-1">✍️ บันทึกข้อความ/เหตุการณ์:</label>
-        <textarea id="userNote" rows="2" class="w-full p-2.5 text-sm rounded-2xl bg-gray-800 text-pink-50 border border-pink-500/30 focus:outline-none focus:border-pink-400 placeholder-pink-300/30" placeholder="เช่น ตั้งใจเรียนวิชาหลักเรียบร้อย..."></textarea>
-      </div>
-
-      <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-bold py-3 rounded-2xl transition shadow-lg active:scale-95 text-sm cursor-pointer">
-        🚀 ส่งรายงานและรับพลังใจด้วย AI
-      </button>
-    </form>
 
   </div>
 
   <!-- ✨ Custom Modal แจ้งเตือน -->
   <div id="customModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-gray-900 border border-pink-500/40 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
-      <div class="w-12 h-12 bg-pink-500/20 text-pink-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+    <div class="bg-gray-900 border border-pink-400/40 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 bg-pink-500/20 text-pink-300 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
         🤖
       </div>
-      <h3 class="text-base font-bold text-pink-300">ผลการประมวลผลจาก AI</h3>
-      <div id="modalMessage" class="text-xs text-pink-100 leading-relaxed whitespace-pre-line text-left bg-gray-950/70 p-3.5 rounded-2xl border border-pink-900/40 max-h-60 overflow-y-auto"></div>
+      <h3 class="text-base font-bold text-pink-200">ผลการประมวลผลจาก AI</h3>
+      <div id="modalMessage" class="text-xs text-pink-50 leading-relaxed whitespace-pre-line text-left bg-gray-950/80 p-3.5 rounded-2xl border border-pink-900/40 max-h-60 overflow-y-auto"></div>
       <button type="button" onclick="closeModal()" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2.5 rounded-2xl transition active:scale-95 text-sm cursor-pointer">
         OK 👍
       </button>
@@ -327,6 +365,28 @@
       "🦄✨ ส่งยิ้มหวานๆ ให้ตัวเองทีนึง คนเก่งสู้ๆ!"
     ];
 
+    // 🔘 ฟังก์ชันสลับเมนู (Tab Switching)
+    function switchTab(tabName) {
+      document.getElementById('tabReportContent').classList.add('hidden');
+      document.getElementById('tabSavingsContent').classList.add('hidden');
+      document.getElementById('tabSettingsContent').classList.add('hidden');
+
+      document.getElementById('tabReportBtn').className = "py-2 text-xs font-bold rounded-xl transition text-pink-300 hover:text-white cursor-pointer flex items-center justify-center gap-1";
+      document.getElementById('tabSavingsBtn').className = "py-2 text-xs font-bold rounded-xl transition text-pink-300 hover:text-white cursor-pointer flex items-center justify-center gap-1";
+      document.getElementById('tabSettingsBtn').className = "py-2 text-xs font-bold rounded-xl transition text-pink-300 hover:text-white cursor-pointer flex items-center justify-center gap-1";
+
+      if (tabName === 'report') {
+        document.getElementById('tabReportContent').classList.remove('hidden');
+        document.getElementById('tabReportBtn').className = "py-2 text-xs font-bold rounded-xl transition bg-pink-600 text-white shadow-md cursor-pointer flex items-center justify-center gap-1";
+      } else if (tabName === 'savings') {
+        document.getElementById('tabSavingsContent').classList.remove('hidden');
+        document.getElementById('tabSavingsBtn').className = "py-2 text-xs font-bold rounded-xl transition bg-pink-600 text-white shadow-md cursor-pointer flex items-center justify-center gap-1";
+      } else if (tabName === 'settings') {
+        document.getElementById('tabSettingsContent').classList.remove('hidden');
+        document.getElementById('tabSettingsBtn').className = "py-2 text-xs font-bold rounded-xl transition bg-pink-600 text-white shadow-md cursor-pointer flex items-center justify-center gap-1";
+      }
+    }
+
     function updateAllUI() {
       const data = window.userAppData;
       document.getElementById('goalTitleInput').value = data.goalTitle;
@@ -339,6 +399,10 @@
 
       if (data.bubblePhoto) {
         setupFloatingBubbles();
+        document.getElementById('bubblePreviewContainer').classList.remove('hidden');
+        document.getElementById('bubblePreviewImg').src = data.bubblePhoto;
+      } else {
+        document.getElementById('bubblePreviewContainer').classList.add('hidden');
       }
 
       if (data.scheduleName) {
@@ -406,13 +470,14 @@
       showModal(`📌 บันทึกสเตจสำเร็จ!\n\n- 🎯 ภารกิจ: ${actionText}\n- 📊 สเตจปัจจุบัน: Stage ${stageNum}/4\n\n${encouragement}`);
     }
 
+    // 🫧 สร้างฟองสบู่ลอยและแตกแบบละมุน ไม่ถี่จนเกินไป
     function setupFloatingBubbles() {
       const container = document.getElementById('floatingBubblesContainer');
       container.innerHTML = '';
       container.classList.remove('hidden');
 
-      for (let i = 0; i < 5; i++) {
-        createMovingBubble(container, i * 700);
+      for (let i = 0; i < 3; i++) {
+        createMovingBubble(container, i * 1800);
       }
     }
 
@@ -422,8 +487,8 @@
 
         const bubbleDiv = document.createElement('div');
         const randomX = Math.floor(Math.random() * 75) + 10; 
-        const randomSize = Math.floor(Math.random() * 20) + 65; 
-        const randomDuration = (Math.random() * 1.5 + 2.5).toFixed(1); 
+        const randomSize = Math.floor(Math.random() * 15) + 60; 
+        const randomDuration = (Math.random() * 1.5 + 4).toFixed(1); 
         const randomPhrase = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
 
         bubbleDiv.className = `absolute bottom-[-120px] flex flex-col items-center z-40 bubble-burst-anim`;
@@ -434,7 +499,7 @@
           <div class="relative rounded-full border-2 border-pink-300 shadow-lg shadow-pink-500/50 overflow-hidden bg-gray-800" style="width: ${randomSize}px; height: ${randomSize}px;">
             <img src="${window.userAppData.bubblePhoto}" class="w-full h-full object-cover">
           </div>
-          <span class="text-[9px] text-pink-100 mt-1 bg-black/75 px-2.5 py-1 rounded-full backdrop-blur-sm whitespace-nowrap shadow-md border border-pink-500/30 font-medium">
+          <span class="text-[9px] text-pink-100 mt-1 bg-black/75 px-2.5 py-1 rounded-full backdrop-blur-sm whitespace-nowrap shadow-md border border-pink-400/30 font-medium">
             ${randomPhrase}
           </span>
         `;
@@ -468,10 +533,10 @@
 
       photos.forEach((imgBase64, index) => {
         const imgThumb = document.createElement('div');
-        imgThumb.className = "w-12 h-12 rounded-xl border border-pink-500/40 overflow-hidden bg-gray-900 cursor-pointer shrink-0 shadow-sm hover:scale-105 transition";
+        imgThumb.className = "w-12 h-12 rounded-xl border border-pink-400/40 overflow-hidden bg-gray-900 cursor-pointer shrink-0 shadow-sm hover:scale-105 transition";
         imgThumb.innerHTML = `<img src="${imgBase64}" class="w-full h-full object-cover">`;
         imgThumb.onclick = function() {
-          showModal(`🖼️ รูปถ่ายย้อนหลัง (รูปที่ ${index + 1}):\n\n<img src="${imgBase64}" class="w-full rounded-2xl mt-2 border border-pink-500/30">`);
+          showModal(`🖼️ รูปถ่ายย้อนหลัง (รูปที่ ${index + 1}):\n\n<img src="${imgBase64}" class="w-full rounded-2xl mt-2 border border-pink-400/30">`);
         };
         historyGallery.appendChild(imgThumb);
       });
@@ -584,6 +649,7 @@
       showModal(`🗑️ ลบข้อมูลตารางเรียนเรียบร้อยแล้ว สามารถอัปโหลดรูปตารางใหม่ได้ทันทีครับ`);
     }
 
+    // 🫧 ตั้งค่ารูปฟองสบู่
     document.getElementById('bubbleImageInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -592,10 +658,23 @@
           window.userAppData.bubblePhoto = event.target.result;
           window.syncDataToCloud();
           setupFloatingBubbles();
+          document.getElementById('bubblePreviewContainer').classList.remove('hidden');
+          document.getElementById('bubblePreviewImg').src = window.userAppData.bubblePhoto;
+          showModal(`🫧 บันทึกรูปฟองสบู่สำเร็จ!\n\nรูปภาพกำลังใจของคุณพร้อมลอยขึ้นมาเติมพลังแล้วครับ 💖`);
         };
         reader.readAsDataURL(file);
       }
     });
+
+    function clearBubblePhoto() {
+      window.userAppData.bubblePhoto = "";
+      window.syncDataToCloud();
+      document.getElementById('floatingBubblesContainer').innerHTML = '';
+      document.getElementById('floatingBubblesContainer').classList.add('hidden');
+      document.getElementById('bubblePreviewContainer').classList.add('hidden');
+      document.getElementById('bubbleImageInput').value = "";
+      showModal(`🗑️ ลบรูปฟองสบู่เรียบร้อยแล้วครับ`);
+    }
 
     function updateProgressUI() {
       const data = window.userAppData;
@@ -621,7 +700,7 @@
       if (targetInput) {
         window.userAppData.targetAmount = parseFloat(targetInput) || 6000;
       }
-      window.userAppData.goalTitle = titleInput ? titleInput : "เป้าหมายการเก็บเงิน 🎀";
+      window.userAppData.goalTitle = titleInput ? titleInput : "เก็บเงินซื้อของ 🎀";
 
       window.syncDataToCloud();
       document.getElementById('displayGoalTitle').innerText = `🎯 เป้าหมาย: ${window.userAppData.goalTitle}`;
@@ -630,26 +709,48 @@
       showModal(`🎯 บันทึกตั้งค่าเป้าหมายสำเร็จ!\n- หัวข้อ: ${window.userAppData.goalTitle}\n- เป้าหมายใหม่: ${window.userAppData.targetAmount.toLocaleString()} บาท`);
     }
 
+    // ➕ ฝากเงินเพิ่ม
     function addSavings() {
-      const addInput = document.getElementById('addMoneyInput').value;
-      const addVal = parseFloat(addInput);
+      const inputVal = document.getElementById('moneyActionInput').value;
+      const addVal = parseFloat(inputVal);
       
       if (!isNaN(addVal) && addVal > 0) {
         window.userAppData.currentSavings += addVal;
         window.syncDataToCloud();
       } else {
-        alert('กรุณากรอกจำนวนเงินที่ต้องการฝากเพิ่มให้ถูกต้องครับ!');
+        alert('กรุณากรอกจำนวนเงินให้ถูกต้องครับ!');
         return;
       }
 
       updateProgressUI();
-      document.getElementById('addMoneyInput').value = '';
+      document.getElementById('moneyActionInput').value = '';
 
       const data = window.userAppData;
       let percent = (data.currentSavings / data.targetAmount) * 100;
       if (percent > 100) percent = 100;
 
       showModal(`💰 ฝากเงินเข้าเป้าหมาย "${data.goalTitle}" สำเร็จ +${addVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${data.currentSavings.toLocaleString()} / ${data.targetAmount.toLocaleString()} บาท (${percent.toFixed(1)}%)`);
+    }
+
+    // ➖ หักเงินออก (เผื่อพิมพ์ผิด / แก้ไขข้อผิดพลาด)
+    function deductSavings() {
+      const inputVal = document.getElementById('moneyActionInput').value;
+      const deductVal = parseFloat(inputVal);
+      
+      if (!isNaN(deductVal) && deductVal > 0) {
+        window.userAppData.currentSavings -= deductVal;
+        if (window.userAppData.currentSavings < 0) window.userAppData.currentSavings = 0;
+        window.syncDataToCloud();
+      } else {
+        alert('กรุณากรอกจำนวนเงินที่ต้องการหักออกให้ถูกต้องครับ!');
+        return;
+      }
+
+      updateProgressUI();
+      document.getElementById('moneyActionInput').value = '';
+
+      const data = window.userAppData;
+      showModal(`⚠️ หักเงินออกจากเป้าหมายสำเร็จ -${deductVal.toLocaleString()} บาท!\n\nยอดสะสมปัจจุบัน: ${data.currentSavings.toLocaleString()} / ${data.targetAmount.toLocaleString()} บาท`);
     }
 
     function handleFormSubmit(event) {
